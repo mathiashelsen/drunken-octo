@@ -1,9 +1,14 @@
 #include "drunken_octo.hpp"
 
-template <class T> drunken_octo<T>::drunken_octo ( T *dataPoint, int (* _tant)( T *parent, T *child), int _N )
+template <class T> drunken_octo<T>::drunken_octo ( 
+	T *dataPoint, 
+	int (* _tant)( T *parent, T *child), 
+	void (* _extents)( T *parent, T *child, T **nodeExtents),
+	int _N );
 {
     nodeData = *dataPoint;
     tant = _tant;
+    extents = _extents;
     N = _N;
 }
 

@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#define NULL 0
+
 template <class T> class drunken_octo
 {
 private:
@@ -17,12 +19,12 @@ private:
     // The function to determine at which quadrant/octant/... a child belongs
     int (* tant)( T *parent, T *child );
 public:
-    drunken_octo ( T *dataPoint, int (* _tant)( T *parent, T *child) );
+    // Adding a node requires only a datapoint and a comparison function
+    drunken_octo ( T *dataPoint, int (* _tant)( T *parent, T *child), int _N );
+    // Remove a node, and its children!
     ~drunken_octo();
-    // Check if the node is a root node
-    bool IsRoot();  
     // Add a datapoint to an existing tree
-    void addNode( drunken_octo<T> *newNode, drunken_octo<T> *parent );
+    void addNode( drunken_octo<T> *newNode );
 };
 
 #endif

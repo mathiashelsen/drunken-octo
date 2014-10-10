@@ -4,17 +4,22 @@ template <class T> drunken_octo<T>::drunken_octo (
 	T *dataPoint, 
 	int (* _tant)( T *parent, T *child), 
 	void (* _extents)( T *parent, T *child, T **nodeExtents),
-	int _N );
+	int _N )
 {
     nodeData = *dataPoint;
     tant = _tant;
     extents = _extents;
     N = _N;
+    nChildren = 1;
+    for( int i = 0; i < N; i++ )
+    {
+	nChildren *= 2;
+    }
 }
 
 template <class T> drunken_octo<T>::~drunken_octo()
 {
-    for(int i = 0; i < N; i++)
+    for(int i = 0; i < nChildren; i++)
     {
 	if(children[i] != NULL)
 	{
@@ -26,6 +31,7 @@ template <class T> drunken_octo<T>::~drunken_octo()
 template <class T> void drunken_octo<T>::addNode( drunken_octo<T> *newNode )
 {
     int tantIndex = tant( this, newNode );
+    nodeExtents = new drunken_octo<T>[nChildren];
     if( children[tantIndex] != NULL )
     {
 	children[tantIndex]->addNode(newNode);

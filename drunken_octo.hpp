@@ -15,8 +15,10 @@ private:
     drunken_octo<T> *parent;
     // Each node can have some children
     drunken_octo<T> *children;
-    // The maximum number of children
+    // The number of dimensions
     int N;
+    // and the resulting number of children (2**N)
+    int nChildren;
     // The function to determine at which quadrant/octant/... a child belongs
     int (* tant)( T *parent, T *child );
     // The function to calculate the extents of each node

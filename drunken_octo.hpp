@@ -2,7 +2,6 @@
 #define _DRUNKEN_OCTO_HPP
 
 #include <vector>
-
 #define NULL 0
 
 template <class T> class drunken_octo

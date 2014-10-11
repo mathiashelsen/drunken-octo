@@ -37,7 +37,10 @@ public:
     void getExtents( S *extents );
     void setExtents( S *extents );
     void getData( T *data );
+    // Retrieves a vector/list of pointers to nodes that are leaves of the tree
     void getLeaves( std::vector<drunken_octo<T, S> *> *leavesList );
+    // Retrieve the N closest leaves to a specific point, where a metric function is specified.
+    void getNeighbours( S *position, double (metric *)( S *a, S *b), int N, std::vector<drunken_octo<T, S> *> *leavesList);
 };
 
 template <class T, class S> drunken_octo<T, S>::drunken_octo ( 

@@ -64,7 +64,7 @@ public:
     // Retrieves a vector/list of pointers to nodes that are leaves of the tree
     void getLeaves( std::vector<drunken_octo<T, S> *> *leavesList );
     // Retrieve the N closest leaves to a specific point, where a metric function is specified.
-    void getNeighbours( S *position, double (metric *)( S *a, S *b), int N, std::vector<drunken_octo<T, S> *> *leavesList);
+    void getNeighbours( S *position, double ( * metric )( S *a, S *b), int N, std::vector<drunken_octo<T, S> *> *leavesList);
 };
 
 template <class T, class S> drunken_octo<T, S>::drunken_octo ( 
@@ -112,16 +112,12 @@ template <class T, class S> void drunken_octo<T, S>::addNode( drunken_octo<T, S>
     {
 	children[tantIndex] = newNode;
     }
+
     if( leaf )
     {
-	std::cout << "Parent was a leaf, adding new node" << std::endl;
 	leaf = false;
 	drunken_octo<T, S> *newNode = new drunken_octo<T, S>(&nodeData, tant, N);
 	this->addNode( newNode );
-    }
-    else
-    {
-	std::cout << "Parent was not a leaf, done adding this node" << std::endl;
     }
 }
 

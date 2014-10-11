@@ -26,6 +26,7 @@ THE SOFTWARE.
 #include <iostream>
 #include <assert.h>
 #include <vector>
+#include <gsl/gsl_rng.h>
 
 /*
  * In this example, we will create a quadrant tree spanning 
@@ -43,7 +44,57 @@ typedef struct
     double x, y;
 } myVector;
 
+int quadrant_f( drunken_octo<myVector, myVector> *parent, drunken_octo<myVector, myVector> *child );
+
 typedef drunken_octo<myVector, myVector> Node2D;
+
+int
+main(int argc, char **argv)
+{
+    std::cout << "Hello world!" << std::endl;
+    myVector rootPosition = {0.0, 0.0};
+    myVector rootExtents[2];
+    rootExtents[0].x = -1.0;
+    rootExtents[0].y = -1.0;
+    rootExtents[1].x = 1.0;
+    rootExtents[1].y = 1.0;
+
+    Node2D *root = new Node2D(
+	&rootPosition,
+	&quadrant_f,
+	2);
+
+    root->setExtents( rootExtents );
+    const gsl_rng_type * T;
+    gsl_rng * r;
+    gsl_rng_env_setup();
+    T = gsl_rng_default;
+    r = gsl_rng_alloc (T);
+
+    myVector pos;
+    for (int i = 0; i < 1000; i++) 
+    {
+	pos.x = gsl_rng_uniform (r);
+	pos.y = gsl_rng_uniform (r);
+	Node2D *node = new Node2D( &pos, &quadrant_f, 2 );
+	root->addNode(node);
+    }
+
+    gsl_rng_free (r);
+
+    std::vector< Node2D * > leaves;
+    root->getLeaves( &leaves );
+
+    for(std::vector< Node2D *>::iterator it = leaves.begin(); it != leaves.end(); ++it)
+    {
+	(*it)->getData(&pos);
+	std::cout << "This leaf is located at: " << pos.x << ", " << pos.y << std::endl;
+    }
+
+    delete root;
+    
+    return 0;
+}
 
 int quadrant_f( drunken_octo<myVector, myVector> *parent, drunken_octo<myVector, myVector> *child )
 {
@@ -87,44 +138,4 @@ int quadrant_f( drunken_octo<myVector, myVector> *parent, drunken_octo<myVector,
     
     child->setExtents( childExtents );
     return quadrant_index;
-}
-
-int
-main(int argc, char **argv)
-{
-    std::cout << "Hello world!" << std::endl;
-    myVector rootPosition = {0.0, 0.0};
-    myVector rootExtents[2];
-    rootExtents[0].x = -1.0;
-    rootExtents[0].y = -1.0;
-    rootExtents[1].x = 1.0;
-    rootExtents[1].y = 1.0;
-
-    Node2D *root = new Node2D(
-	&rootPosition,
-	&quadrant_f,
-	2);
-
-    root->setExtents( rootExtents );
-
-    myVector nodePos1 = {0.5, 0.24};
-    myVector nodePos2 = {0.5, 0.23};
-    Node2D *node1 = new Node2D( &nodePos1, &quadrant_f, 2 );
-    Node2D *node2 = new Node2D( &nodePos2, &quadrant_f, 2 );
-    root->addNode(node1);
-    root->addNode(node2);
-
-    std::vector< Node2D * > leaves;
-    root->getLeaves( &leaves );
-
-    myVector pos;
-    for(std::vector< Node2D *>::iterator it = leaves.begin(); it != leaves.end(); ++it)
-    {
-	(*it)->getData(&pos);
-	std::cout << "This leaf is located at: " << pos.x << ", " << pos.y << std::endl;
-    }
-
-    delete root;
-    
-    return 0;
 }

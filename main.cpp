@@ -6,10 +6,22 @@
  * a two-dimensional space.
  */
 
-
-int quadrant_f( drunken_octo<double *> *parent, drunken_octo<double *> *child )
+typedef struct
 {
-    
+    double x, y;
+} myVector;
+
+template class drunken_octo<myVector, myVector>;
+
+
+int quadrant_f( drunken_octo<myVector, myVector> *parent, drunken_octo<myVector, myVector> *child )
+{
+    myVector childPos;
+    child->getData( &childPos );
+    myVector parentExtents[2];
+    parent->getExtents( parentExtents );
+
+    return 0;
 }
 
 int

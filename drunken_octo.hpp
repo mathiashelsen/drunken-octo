@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string.h>
+#include <iostream>
 
 template <class T, class S> class drunken_octo
 {
@@ -36,8 +37,7 @@ public:
     void getExtents( S *extents );
     void setExtents( S *extents );
     void getData( T *data );
-    void getLeaf() { return leaf; };
-    void setLeaf(bool _leaf) { leaf = _leaf; };
+    void getLeaves( std::vector<drunken_octo<T, S> *> *leavesList );
 };
 
 template <class T, class S> drunken_octo<T, S>::drunken_octo ( 
@@ -87,9 +87,14 @@ template <class T, class S> void drunken_octo<T, S>::addNode( drunken_octo<T, S>
     }
     if( leaf )
     {
+	std::cout << "Parent was a leaf, adding new node" << std::endl;
 	leaf = false;
 	drunken_octo<T, S> *newNode = new drunken_octo<T, S>(&nodeData, tant, N);
-	this.addNode( newNode );
+	this->addNode( newNode );
+    }
+    else
+    {
+	std::cout << "Parent was not a leaf, done adding this node" << std::endl;
     }
 }
 
@@ -106,6 +111,24 @@ template <class T, class S> void drunken_octo<T, S>::setExtents( S *extents )
 template <class T, class S> void drunken_octo<T, S>::getData( T *data )
 {
     memcpy(data, &nodeData, sizeof(T));
+}
+
+template <class T, class S> void drunken_octo<T, S>::getLeaves( std::vector<drunken_octo<T, S> *> *leavesList )
+{
+    if(leaf)
+    {
+	leavesList->push_back(this);
+    }
+    else
+    {
+	for(int i = 0; i < nChildren; i++)
+	{
+	    if(children[i] != NULL)
+	    {
+		children[i]->getLeaves( leavesList );
+	    }
+	}
+    }
 }
 
 #endif

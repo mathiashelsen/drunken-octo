@@ -1,6 +1,7 @@
 #include "drunken_octo.hpp"
 #include <iostream>
 #include <assert.h>
+#include <vector>
 
 /*
  * In this example, we will create a quadrant tree spanning 
@@ -81,9 +82,23 @@ main(int argc, char **argv)
 	2);
 
     root->setExtents( rootExtents );
-    myVector bla[2];
-    root->getExtents( bla );
-    std::cout << bla[0].x << ", " << bla[1].x << std::endl;
+
+    myVector nodePos1 = {0.5, 0.24};
+    myVector nodePos2 = {0.5, 0.23};
+    Node2D *node1 = new Node2D( &nodePos1, &quadrant_f, 2 );
+    Node2D *node2 = new Node2D( &nodePos2, &quadrant_f, 2 );
+    root->addNode(node1);
+    root->addNode(node2);
+
+    std::vector< Node2D * > leaves;
+    root->getLeaves( &leaves );
+
+    myVector pos;
+    for(std::vector< Node2D *>::iterator it = leaves.begin(); it != leaves.end(); ++it)
+    {
+	(*it)->getData(&pos);
+	std::cout << "This leaf is located at: " << pos.x << ", " << pos.y << std::endl;
+    }
 
     delete root;
     

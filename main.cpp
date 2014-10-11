@@ -51,11 +51,10 @@ typedef drunken_octo<myVector, myVector> Node2D;
 int
 main(int argc, char **argv)
 {
-    std::cout << "Hello world!" << std::endl;
     myVector rootPosition = {0.0, 0.0};
     myVector rootExtents[2];
-    rootExtents[0].x = -1.0;
-    rootExtents[0].y = -1.0;
+    rootExtents[0].x = 0.0;
+    rootExtents[0].y = 0.0;
     rootExtents[1].x = 1.0;
     rootExtents[1].y = 1.0;
 
@@ -72,7 +71,7 @@ main(int argc, char **argv)
     r = gsl_rng_alloc (T);
 
     myVector pos;
-    for (int i = 0; i < 1000; i++) 
+    for (int i = 0; i < 1000000; i++) 
     {
 	pos.x = gsl_rng_uniform (r);
 	pos.y = gsl_rng_uniform (r);
@@ -88,7 +87,7 @@ main(int argc, char **argv)
     for(std::vector< Node2D *>::iterator it = leaves.begin(); it != leaves.end(); ++it)
     {
 	(*it)->getData(&pos);
-	std::cout << "This leaf is located at: " << pos.x << ", " << pos.y << std::endl;
+	//std::cout << "This leaf is located at: " << pos.x << ", " << pos.y << std::endl;
     }
 
     delete root;
@@ -100,39 +99,37 @@ int quadrant_f( drunken_octo<myVector, myVector> *parent, drunken_octo<myVector,
 {
     myVector childPos;
     child->getData( &childPos );
+    myVector parentPos;
+    parent->getData( &parentPos );
     myVector parentExtents[2];
     parent->getExtents( parentExtents );
     // Assert that the child indeed fits in the extents of the parent
     assert( (childPos.x >= parentExtents[0].x) && (childPos.x < parentExtents[1].x) );
     assert( (childPos.y >= parentExtents[0].y) && (childPos.y < parentExtents[1].y) );
 
-    // Calculate the center of the parent node
-    double centerX = (parentExtents[0].x + parentExtents[1].x)*0.5;
-    double centerY = (parentExtents[0].y + parentExtents[1].y)*0.5;
-   
     int quadrant_index = 0; 
     myVector childExtents[2];
-    if( childPos.x < centerX )
+    if( childPos.x < parentPos.x )
     {
 	quadrant_index += 1;
 	childExtents[0].x = parentExtents[0].x;
-	childExtents[1].x = centerX;
+	childExtents[1].x = parentPos.x;
     }
     else
     {
-	childExtents[0].x = centerX;
+	childExtents[0].x = parentPos.x;
 	childExtents[1].x = parentExtents[1].x;
     }
 
-    if( childPos.y < centerY )
+    if( childPos.y < parentPos.y )
     {
 	quadrant_index += 2;
 	childExtents[0].y = parentExtents[0].y;
-	childExtents[1].y = centerY;
+	childExtents[1].y = parentPos.y;
     }
     else
     {
-	childExtents[0].y = centerY;
+	childExtents[0].y = parentPos.y;
 	childExtents[1].y = parentExtents[1].y;
     }
     

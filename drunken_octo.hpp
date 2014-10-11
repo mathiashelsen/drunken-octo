@@ -116,8 +116,6 @@ template <class T, class S> void drunken_octo<T, S>::addNode( drunken_octo<T, S>
     if( leaf )
     {
 	leaf = false;
-	drunken_octo<T, S> *newNode = new drunken_octo<T, S>(&nodeData, tant, N);
-	this->addNode( newNode );
     }
 }
 

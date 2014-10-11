@@ -31,7 +31,6 @@ template <class T> drunken_octo<T>::~drunken_octo()
 template <class T> void drunken_octo<T>::addNode( drunken_octo<T> *newNode )
 {
     int tantIndex = tant( this, newNode );
-    nodeExtents = new drunken_octo<T>[nChildren];
     if( children[tantIndex] != NULL )
     {
 	children[tantIndex]->addNode(newNode);

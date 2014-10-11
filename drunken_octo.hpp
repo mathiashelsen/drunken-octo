@@ -98,7 +98,7 @@ template <class T, class S> drunken_octo<T, S>::~drunken_octo()
 	    delete children[i];
 	}
     }
-    delete children;
+    delete[] children;
 }
 
 template <class T, class S> void drunken_octo<T, S>::addNode( drunken_octo<T, S> *newNode )

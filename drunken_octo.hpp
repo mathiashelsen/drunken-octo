@@ -18,6 +18,8 @@ private:
     // The number of dimensions 
     int N;
     int nChildren;
+    // Is this node a leaf?
+    bool leaf;
     // The function to determine at which quadrant/octant/... a child belongs
     // and set the new extents of the new node
     int (* tant)( drunken_octo<T, S> *parent, drunken_octo<T, S> *child );
@@ -34,6 +36,8 @@ public:
     void getExtents( S *extents );
     void setExtents( S *extents );
     void getData( T *data );
+    void getLeaf() { return leaf; };
+    void setLeaf(bool _leaf) { leaf = _leaf; };
 };
 
 template <class T, class S> drunken_octo<T, S>::drunken_octo ( 
@@ -45,9 +49,16 @@ template <class T, class S> drunken_octo<T, S>::drunken_octo (
     tant = _tant;
     N = _N;
     nChildren = 1;
+    leaf = true;
     for(int i = 0; i < N; i++)
     {
 	nChildren *= 2;
+    }
+
+    children = new drunken_octo<T, S> *[nChildren];
+    for(int i = 0; i < nChildren; i++ )
+    {
+	children[i] = NULL;
     }
 }
 
@@ -60,6 +71,7 @@ template <class T, class S> drunken_octo<T, S>::~drunken_octo()
 	    delete children[i];
 	}
     }
+    delete children;
 }
 
 template <class T, class S> void drunken_octo<T, S>::addNode( drunken_octo<T, S> *newNode )
@@ -72,6 +84,12 @@ template <class T, class S> void drunken_octo<T, S>::addNode( drunken_octo<T, S>
     else
     {
 	children[tantIndex] = newNode;
+    }
+    if( leaf )
+    {
+	leaf = false;
+	drunken_octo<T, S> *newNode = new drunken_octo<T, S>(&nodeData, tant, N);
+	this.addNode( newNode );
     }
 }
 

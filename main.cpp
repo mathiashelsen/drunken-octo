@@ -25,6 +25,7 @@ THE SOFTWARE.
 #include "drunken_octo.hpp"
 #include <iostream>
 #include <assert.h>
+#include <algorithm>
 #include <vector>
 #include <gsl/gsl_rng.h>
 
@@ -47,46 +48,61 @@ typedef struct
 //int quadrant_f( drunken_octo<myVector, myVector> *parent, drunken_octo<myVector, myVector> *child );
 int compare_myVector( myVector *A, myVector *B, int rank );
 
-typedef drunken_octo<myVector, myVector> Node2D;
+int comparef( double *a, double *b, int rank)
+{
+    if( *a < *b )
+    {
+	return -1;
+    }
+    if( *a == *b)
+    {
+	return 0;
+    }
+    else
+    {
+	return 1;
+    }
+}
+
+typedef drunken_octo<double, double> Node1D;
 
 int
 main(int argc, char **argv)
 {
-    myVector rootPosition = {0.0, 0.0};
-    Node2D *root = new Node2D(
-	&rootPosition,
-	&compare_myVector,
-	2);
-/*
-    root->setExtents( rootExtents );
-    const gsl_rng_type * T;
-    gsl_rng * r;
-    gsl_rng_env_setup();
-    T = gsl_rng_default;
-    r = gsl_rng_alloc (T);
-
-    myVector pos;
-    for (int i = 0; i < 1000000; i++) 
+    std::vector< drunken_octo<double, double> *> nodes;
+    for(int i = 0; i < 10; i++)
     {
-	pos.x = gsl_rng_uniform (r);
-	pos.y = gsl_rng_uniform (r);
-	Node2D *node = new Node2D( &pos, &quadrant_f, 2 );
-	root->addNode(node);
-    }
-
-    gsl_rng_free (r);
-
-    std::vector< Node2D * > leaves;
-    root->getLeaves( &leaves );
-
-    for(std::vector< Node2D *>::iterator it = leaves.begin(); it != leaves.end(); ++it)
+	double f = (double) i;
+	Node1D *newNode = new Node1D( &f, &f, &comparef, 1);
+	nodes.push_back(newNode);
+    } 
+    for(std::vector<drunken_octo<double, double> *>::iterator it = nodes.begin(); it != nodes.end(); it++)
     {
-	(*it)->getData(&pos);
-	//std::cout << "This leaf is located at: " << pos.x << ", " << pos.y << std::endl;
+	double data = 0.0;
+	(*it)->getData(&data);
+	std::cout << data << ", ";
     }
+    std::cout << std::endl;
 
-    delete root;
-  */  
+    std::random_shuffle( nodes.begin(), nodes.end() );
+    for(std::vector<drunken_octo<double, double> *>::iterator it = nodes.begin(); it != nodes.end(); it++)
+    {
+	double data = 0.0;
+	(*it)->getData(&data);
+	std::cout << data << ", ";
+    }
+    std::cout << std::endl;
+
+    int retVal = splitList<double, double>( &nodes, 0, nodes.size()-1, nodes.size()/2, 0);
+    std::cout << "retVal = " << retVal << std::endl;
+    for(std::vector<drunken_octo<double, double> *>::iterator it = nodes.begin(); it != nodes.end(); it++)
+    {
+	double data = 0.0;
+	(*it)->getData(&data);
+	std::cout << data << ", ";
+    }
+    std::cout << std::endl;
+
     return 0;
 }
 

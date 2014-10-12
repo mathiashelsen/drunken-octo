@@ -28,6 +28,7 @@ THE SOFTWARE.
 #include <vector>
 #include <string.h>
 #include <iostream>
+#include <algorithm>
 
 template <class T, class S> class drunken_octo
 {
@@ -67,11 +68,42 @@ public:
     void getPosition( S *position );
     // Retrieves a vector/list of pointers to nodes that are leaves of the tree
     void getLeaves( std::vector<drunken_octo<T, S> *> *leavesList );
+    // Compares a node with another one
+    void compareTo( drunken_octo<T, S> *B, int rank ) { return compare(this, B, rank); };
     // Retrieve the N closest leaves to a specific point, where a metric function is specified.
     //void getNeighbours( S *position, double ( * metric )( S *a, S *b), int N, std::vector<drunken_octo<T, S> *> *leavesList);
 };
 
-template <class T, class S> sortNodelist( 
+static int template <class T, class S> partition(
+    std::vector< drunken_octo<T, S> *> *input, 
+    int _left,
+    int _right,
+    int _pivot,
+    int rank){
+    drunken_octo<T, S> *pivot = input->at(_pivot);
+    std::swap(input->at(_pivot), input->at(_right));
+    int si = left;
+    for( i = left; i < right; i++ )
+    {
+	if( compare(input->at(i), pivot, rank) )
+	{
+	    std::swap(input->at(i), input->at(si));
+	    si++;
+	}
+    }
+    std::swap(input->at(right), input->at(si));
+    return si;
+};
+
+template <class T, class S> splitList( 
+    std::vector< drunken_octo<T, S> *> *input, 
+    drunken_octo<T, S> *median,
+    std::vector< drunken_octo<T, S> *> *left, 
+    std::vector< drunken_octo<T, S> *> *right,
+    int rank)
+{
+
+}
 
 template <class T, class S> drunken_octo<T, S>::drunken_octo ( 
 	T *dataPoint, 

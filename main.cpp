@@ -44,7 +44,8 @@ typedef struct
     double x, y;
 } myVector;
 
-int quadrant_f( drunken_octo<myVector, myVector> *parent, drunken_octo<myVector, myVector> *child );
+//int quadrant_f( drunken_octo<myVector, myVector> *parent, drunken_octo<myVector, myVector> *child );
+int compare_myVector( myVector *A, myVector *B, int rank );
 
 typedef drunken_octo<myVector, myVector> Node2D;
 
@@ -52,17 +53,11 @@ int
 main(int argc, char **argv)
 {
     myVector rootPosition = {0.0, 0.0};
-    myVector rootExtents[2];
-    rootExtents[0].x = 0.0;
-    rootExtents[0].y = 0.0;
-    rootExtents[1].x = 1.0;
-    rootExtents[1].y = 1.0;
-
     Node2D *root = new Node2D(
 	&rootPosition,
-	&quadrant_f,
+	&compare_myVector,
 	2);
-
+/*
     root->setExtents( rootExtents );
     const gsl_rng_type * T;
     gsl_rng * r;
@@ -91,48 +86,12 @@ main(int argc, char **argv)
     }
 
     delete root;
-    
+  */  
     return 0;
 }
 
-int quadrant_f( drunken_octo<myVector, myVector> *parent, drunken_octo<myVector, myVector> *child )
+int compare_myVector( myVector *A, myVector *B, int rank )
 {
-    myVector childPos;
-    child->getData( &childPos );
-    myVector parentPos;
-    parent->getData( &parentPos );
-    myVector parentExtents[2];
-    parent->getExtents( parentExtents );
-    // Assert that the child indeed fits in the extents of the parent
-    assert( (childPos.x >= parentExtents[0].x) && (childPos.x < parentExtents[1].x) );
-    assert( (childPos.y >= parentExtents[0].y) && (childPos.y < parentExtents[1].y) );
 
-    int quadrant_index = 0; 
-    myVector childExtents[2];
-    if( childPos.x < parentPos.x )
-    {
-	quadrant_index += 1;
-	childExtents[0].x = parentExtents[0].x;
-	childExtents[1].x = parentPos.x;
-    }
-    else
-    {
-	childExtents[0].x = parentPos.x;
-	childExtents[1].x = parentExtents[1].x;
-    }
-
-    if( childPos.y < parentPos.y )
-    {
-	quadrant_index += 2;
-	childExtents[0].y = parentExtents[0].y;
-	childExtents[1].y = parentPos.y;
-    }
-    else
-    {
-	childExtents[0].y = parentPos.y;
-	childExtents[1].y = parentExtents[1].y;
-    }
-    
-    child->setExtents( childExtents );
-    return quadrant_index;
+    return 0;
 }

@@ -48,29 +48,34 @@ private:
     bool leaf;
     // A function pointer to compare the values of two nodes according to a specific
     // divisional hyperplane indicated by the rank
-    int (* compare)( drunken_octo<T, S> *A, drunken_octo<T, S> *B, int rank);
+    int (* compare)( S *A, S *B, int rank);
 public:
     // Adding a node requires only a datapoint, a comparison function and a function to yield the extents of a node
     drunken_octo ( 
 	T *dataPoint, 
-	int (* _compare)( drunken_octo<T, S> *A, drunken_octo<T, S> *B, int rank),
+	int (* _compare)( S *A, S *B, int rank),
 	int _N );
     // Remove a node, and its children!
     ~drunken_octo();
     // Add a datapoint to an existing tree
     void addNode( drunken_octo<T, S> *newNode );
-    void getExtents( S *extents );
-    void setExtents( S *extents );
+    // Build an entire tree, algorithm sets the root
+    void buildTree( std::vector<drunken_octo<T, S> *> nodeList, drunken_octo<T, S> *root );
+    // Get the data from a specific node
     void getData( T *data );
+    // Get the position of a specific node
+    void getPosition( S *position );
     // Retrieves a vector/list of pointers to nodes that are leaves of the tree
     void getLeaves( std::vector<drunken_octo<T, S> *> *leavesList );
     // Retrieve the N closest leaves to a specific point, where a metric function is specified.
-    void getNeighbours( S *position, double ( * metric )( S *a, S *b), int N, std::vector<drunken_octo<T, S> *> *leavesList);
+    //void getNeighbours( S *position, double ( * metric )( S *a, S *b), int N, std::vector<drunken_octo<T, S> *> *leavesList);
 };
+
+template <class T, class S> sortNodelist( 
 
 template <class T, class S> drunken_octo<T, S>::drunken_octo ( 
 	T *dataPoint, 
-	int (* _compare)( drunken_octo<T, S> *A, drunken_octo<T, S> *B, int rank),
+	int (* _compare)( S *A, S *B, int rank),
 	int _N )
 {
     memcpy( &nodeData, dataPoint, sizeof(T) );
@@ -99,22 +104,31 @@ template <class T, class S> drunken_octo<T, S>::~drunken_octo()
 
 template <class T, class S> void drunken_octo<T, S>::addNode( drunken_octo<T, S> *newNode )
 {
-/*
-    int tantIndex = tant( this, newNode );
-    if( children[tantIndex] != NULL )
+    int leq = compare( this, newNode );
+    if( leq == -1 )
     {
-	children[tantIndex]->addNode(newNode);
+	if(children[0] == NULL)
+	{
+	    children[0] = newNode;
+	}
+	else
+	{
+	    children[0].addNode( newNode );
+	}
     }
     else
     {
-	children[tantIndex] = newNode;
+	if(children[1] == NULL)
+	{
+	    children[1] = newNode;
+	}
+	else
+	{
+	    children[1].addNode(newNode);
+	}
     }
 
-    if( leaf )
-    {
-	leaf = false;
-    }
-*/
+    leaf = false;
 }
 
 template <class T, class S> void drunken_octo<T, S>::getData( T *data )

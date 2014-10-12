@@ -70,7 +70,7 @@ int
 main(int argc, char **argv)
 {
     std::vector< drunken_octo<double, double> *> nodes;
-    for(int i = 0; i < 10; i++)
+    for(int i = 0; i < 3; i++)
     {
 	double f = (double) i;
 	Node1D *newNode = new Node1D( &f, &f, &comparef, 1);
@@ -94,7 +94,9 @@ main(int argc, char **argv)
     std::cout << std::endl;
 
     int retVal = splitList<double, double>( &nodes, 0, nodes.size()-1, nodes.size()/2, 0);
-    std::cout << "retVal = " << retVal << std::endl;
+    double f = 0.0;
+    nodes.at(retVal)->getData(&f);
+    std::cout << "Central point : " << f << std::endl;
     for(std::vector<drunken_octo<double, double> *>::iterator it = nodes.begin(); it != nodes.end(); it++)
     {
 	double data = 0.0;

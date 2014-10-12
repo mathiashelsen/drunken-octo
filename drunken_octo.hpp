@@ -114,9 +114,7 @@ template <class T, class S> int splitList(
 {
     int pivotIndex = (left + right) / 2;
     if( right == left ) return pivotIndex;
-    std::cout << left << ", " << right << ", " << pivotIndex << ", " << target << std::endl;
     pivotIndex = partition( input, left, right, pivotIndex, rank);
-    std::cout << pivotIndex << ", " << target << std::endl;
     if( pivotIndex == target )
     {
 	return pivotIndex;

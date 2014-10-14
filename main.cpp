@@ -23,30 +23,15 @@ THE SOFTWARE.
 */
 
 #include "drunken_octo.hpp"
+#include "timer.hpp"
+
 #include <iostream>
 #include <assert.h>
 #include <algorithm>
 #include <vector>
 #include <gsl/gsl_rng.h>
-
-/*
- * In this example, we will create a quadrant tree spanning 
- * a two-dimensional space. Quadrant edge will be lower bound inclusive
- * higher bound exclusive. Numbering will not be the standard but:
- *  +---+---+
- *  [ 1 [ 0 [
- *  +---+---+
- *  [ 3 [ 2 [
- *  +---+---+
- */
-
-typedef struct
-{
-    double x, y;
-} myVector;
-
-//int quadrant_f( drunken_octo<myVector, myVector> *parent, drunken_octo<myVector, myVector> *child );
-int compare_myVector( myVector *A, myVector *B, int rank );
+#include <boost/random.hpp>
+#include <boost/random/mersenne_twister.hpp>
 
 int comparef( double *a, double *b, int rank)
 {
@@ -65,51 +50,41 @@ int comparef( double *a, double *b, int rank)
 }
 
 typedef drunken_octo<double, double> Node1D;
+void benchmark_quickselect();
 
 int
 main(int argc, char **argv)
 {
-    std::vector< drunken_octo<double, double> *> nodes;
-    for(int i = 0; i < 3; i++)
-    {
-	double f = (double) i;
-	Node1D *newNode = new Node1D( &f, &f, &comparef, 1);
-	nodes.push_back(newNode);
-    } 
-    for(std::vector<drunken_octo<double, double> *>::iterator it = nodes.begin(); it != nodes.end(); it++)
-    {
-	double data = 0.0;
-	(*it)->getData(&data);
-	std::cout << data << ", ";
-    }
-    std::cout << std::endl;
-
-    std::random_shuffle( nodes.begin(), nodes.end() );
-    for(std::vector<drunken_octo<double, double> *>::iterator it = nodes.begin(); it != nodes.end(); it++)
-    {
-	double data = 0.0;
-	(*it)->getData(&data);
-	std::cout << data << ", ";
-    }
-    std::cout << std::endl;
-
-    int retVal = splitList<double, double>( &nodes, 0, nodes.size()-1, nodes.size()/2, 0);
-    double f = 0.0;
-    nodes.at(retVal)->getData(&f);
-    std::cout << "Central point : " << f << std::endl;
-    for(std::vector<drunken_octo<double, double> *>::iterator it = nodes.begin(); it != nodes.end(); it++)
-    {
-	double data = 0.0;
-	(*it)->getData(&data);
-	std::cout << data << ", ";
-    }
-    std::cout << std::endl;
+    benchmark_quickselect();
 
     return 0;
 }
 
-int compare_myVector( myVector *A, myVector *B, int rank )
+void benchmark_quickselect()
 {
+    int sizeList = 1000;
+    while(sizeList <= 10000000)
+    {
+	boost::mt19937 *rng = new boost::mt19937();
+	static boost::uniform_01<boost::mt19937> generator(*rng);
+	std::vector< drunken_octo<double, double> *> nodes;
 
-    return 0;
+	double f = 0.0;
+	for(int i = 0; i < sizeList; i++)
+	{
+	    f = generator();
+	    Node1D *newNode = new Node1D( &f, &f );
+	    nodes.push_back(newNode);
+	} 
+
+	Timer tm;
+	std::ostringstream ooo;
+	std::string str;
+
+	tm.start();
+	int retVal = splitList<double, double>( &nodes, &comparef, 0, nodes.size()-1, nodes.size()/2, 0);
+	tm.stop();
+	std::cout << sizeList << "\t" << tm.duration() << std::endl;
+	sizeList *= 2;
+    }
 }

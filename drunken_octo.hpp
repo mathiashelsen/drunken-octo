@@ -41,61 +41,53 @@ private:
     drunken_octo<T, S> *parent;
     // Each node can have some children
     drunken_octo<T, S> *children[2];
-    // The number of dimensions 
-    int N;
     // The depth at which the node is located
     int depth;
     // Is this node a leaf?
     bool leaf;
-    // A function pointer to compare the values of two nodes according to a specific
-    // divisional hyperplane indicated by the rank
-    int (* compare)( S *A, S *B, int rank);
 public:
     // Adding a node requires only a datapoint, a comparison function and a function to yield the extents of a node
-    drunken_octo ( 
-	T *dataPoint, 
-	S *position,
-	int (* _compare)( S *A, S *B, int rank),
-	int _N );
+    drunken_octo (T *dataPoint, S *position);
     // Remove a node, and its children!
     ~drunken_octo();
     // Add a datapoint to an existing tree
-    void addNode( drunken_octo<T, S> *newNode, int rank );
+    void addNode( 
+	drunken_octo<T, S> *newNode, 
+	int (* compare)( S *A, S *B, int rank),
+	int k,
+	int depth );
     // Build an entire tree, algorithm sets the root
-    void buildTree( std::vector<drunken_octo<T, S> *> nodeList, drunken_octo<T, S> *root );
+    void buildTree( 
+	std::vector<drunken_octo<T, S> *> nodeList, 
+	drunken_octo<T, S> *root,
+	int (* compare)( S *A, S *B, int rank),
+	int k );
     // Get the data from a specific node
-    void getData( T *data );
+    T* getData() { return &nodeData; };
     // Get the position of a specific node
     S *getPosition( ){ return &nodePosition; };
     void setRank( int _rank );
     // Retrieves a vector/list of pointers to nodes that are leaves of the tree
     void getLeaves( std::vector<drunken_octo<T, S> *> *leavesList );
     // Compares a node with another one
-    int compareTo( drunken_octo<T, S> *B, int rank );
     // Retrieve the N closest leaves to a specific point, where a metric function is specified.
     //void getNeighbours( S *position, double ( * metric )( S *a, S *b), int N, std::vector<drunken_octo<T, S> *> *leavesList);
 };
 
-template <class T, class S> int drunken_octo<T, S>::compareTo( drunken_octo<T, S> *B, int rank)
-{
-    S *dataA = &nodePosition;
-    S *dataB = B->getPosition();
-    return compare( dataA, dataB, rank );
-}
-
 template <class T, class S> static int partition(
     std::vector< drunken_octo<T, S> *> *input, 
+    int (* compare)( S *A, S *B, int rank),
     int _left,
     int _right,
     int _pivot,
-    int rank){
-
+    int rank)
+{
     drunken_octo<T, S> *pivot = input->at(_pivot);
     std::swap(input->at(_pivot), input->at(_right));
     int si = _left;
     for( int i = _left; i < _right; i++ )
     {
-	if( input->at(i)->compareTo(pivot, rank) <= 0 )
+	if( compare( input->at(i)->getPosition(), pivot->getPosition(), rank) <= 0 )
 	{
 	    std::swap(input->at(i), input->at(si));
 	    si++;
@@ -103,10 +95,11 @@ template <class T, class S> static int partition(
     }
     std::swap(input->at(_right), input->at(si));
     return si;
-};
+}
 
 template <class T, class S> int splitList( 
     std::vector< drunken_octo<T, S> *> *input, 
+    int (* compare)( S *A, S *B, int rank),
     int left,
     int right,
     int target,
@@ -114,31 +107,27 @@ template <class T, class S> int splitList(
 {
     int pivotIndex = (left + right) / 2;
     if( right == left ) return pivotIndex;
-    pivotIndex = partition( input, left, right, pivotIndex, rank);
+    pivotIndex = partition( input, compare, left, right, pivotIndex, rank);
     if( pivotIndex == target )
     {
 	return pivotIndex;
     }
     else if(pivotIndex > target)
     {
-	return splitList(input, left, pivotIndex-1, target, rank);
+	return splitList(input, compare, left, pivotIndex-1, target, rank);
     }
     else
     {
-	return splitList(input, pivotIndex+1, right, target, rank);
+	return splitList(input, compare, pivotIndex+1, right, target, rank);
     }
 }
 
 template <class T, class S> drunken_octo<T, S>::drunken_octo ( 
 	T *dataPoint, 
-	S *position,
-	int (* _compare)( S *A, S *B, int rank),
-	int _N )
+	S *position)
 {
     memcpy( &nodeData, dataPoint, sizeof(T) );
     memcpy( &nodePosition, position, sizeof(S) );
-    compare = _compare;
-    N = _N;
     depth = 0;
     leaf = true;
 
@@ -160,18 +149,26 @@ template <class T, class S> drunken_octo<T, S>::~drunken_octo()
     delete[] children;
 }
 
-template <class T, class S> void drunken_octo<T, S>::addNode( drunken_octo<T, S> *newNode, int rank )
+template <class T, class S> void drunken_octo<T, S>::addNode(
+	drunken_octo<T, S> *newNode, 
+	int (* compare)( S *A, S *B, int rank),
+	int k,
+	int depth )
 {
-    int leq = compare( this, newNode );	
+    int leq = compare( this->getPosition(), newNode->getPosition, depth%k );	
     int i = (leq == -1) ? 0 : 1;
     if(children[i] == NULL)
     {
         children[i] = newNode;
-	newNode->setRank( rank );
+	newNode->setRank( depth );
     }
     else
     {
-	children[i].addNode( newNode, ((rank+1)%N) );
+	children[i].addNode( 
+	    newNode, 
+	    compare,
+	    k,
+	    depth+1 );
     }
 
     leaf = false;
@@ -180,11 +177,6 @@ template <class T, class S> void drunken_octo<T, S>::addNode( drunken_octo<T, S>
 template <class T, class S> void drunken_octo<T, S>::setRank( int _rank )
 {
     depth = _rank;
-}
-
-template <class T, class S> void drunken_octo<T, S>::getData( T *data )
-{
-    memcpy(data, &nodeData, sizeof(T));
 }
 
 template <class T, class S> void drunken_octo<T, S>::getLeaves( std::vector<drunken_octo<T, S> *> *leavesList )

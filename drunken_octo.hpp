@@ -173,17 +173,19 @@ template <class T, class S> void buildTree(
 	S*  pos = (*parent)->getPosition();
 	std::cout << *pos << std::endl;
 	(*parent)->setDepth(_depth);
-	if( nodeList->size() == 2 )
-	{
-
-	}
-	if( nodeList->size() > 2 )
+	if( nodeList->size() > 1 )
 	{
 	    std::vector<drunken_octo<T, S> *> left(nodeList->begin(), nodeList->begin() + retVal);
 	    std::vector<drunken_octo<T, S> *> right(nodeList->begin() + retVal + 1, nodeList->end());
 	    std::cout << "Left size = " << left.size() << ", right size = " << right.size() << std::endl;
-	    buildTree( &left, &((*parent)->children[0]), compare, k, _depth+1);
-	    buildTree( &right, &((*parent)->children[1]), compare, k, _depth+1);
+	    if( left.size() > 0 )
+	    {
+		buildTree( &left, &((*parent)->children[0]), compare, k, _depth+1);
+	    }
+	    if( right.size() > 0 )
+	    {
+		buildTree( &right, &((*parent)->children[1]), compare, k, _depth+1);
+	    }
 	}
     }
 }

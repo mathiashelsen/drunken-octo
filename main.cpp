@@ -56,7 +56,7 @@ int
 main(int argc, char **argv)
 {
     std::vector< drunken_octo<double, double> *> nodes;
-    for(int i = 0; i < 5; i++)
+    for(int i = 0; i < 9; i++)
     {
 	double f = (double) i;
 	Node1D *newNode = new Node1D( &f, &f);

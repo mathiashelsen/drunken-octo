@@ -39,13 +39,13 @@ private:
     S nodePosition;
     // Each node has a parent, unless it is root (then it is NULL)
     drunken_octo<T, S> *parent;
-    // Each node can have some children
-    drunken_octo<T, S> *children[2];
     // The depth at which the node is located
     int depth;
     // Is this node a leaf?
     bool leaf;
 public:
+    // Each node can have some children
+    drunken_octo<T, S> *children[2];
     // Adding a node requires only a datapoint, a comparison function and a function to yield the extents of a node
     drunken_octo (T *dataPoint, S *position);
     // Remove a node, and its children!
@@ -59,14 +59,17 @@ public:
     // Build an entire tree, algorithm sets the root
     void buildTree( 
 	std::vector<drunken_octo<T, S> *> nodeList, 
-	drunken_octo<T, S> *root,
+	drunken_octo<T, S> **parent,
 	int (* compare)( S *A, S *B, int rank),
-	int k );
+	int k,
+	int depth,
+	int left,
+	int right );
     // Get the data from a specific node
     T* getData() { return &nodeData; };
     // Get the position of a specific node
     S *getPosition( ){ return &nodePosition; };
-    void setRank( int _rank );
+    void setDepth ( int _depth );
     // Retrieves a vector/list of pointers to nodes that are leaves of the tree
     void getLeaves( std::vector<drunken_octo<T, S> *> *leavesList );
     // Compares a node with another one
@@ -146,7 +149,43 @@ template <class T, class S> drunken_octo<T, S>::~drunken_octo()
 	delete children[1];
     }
 
-    delete[] children;
+    //delete[] children;
+}
+
+template <class T, class S> void buildTree( 
+	std::vector<drunken_octo<T, S> *> *nodeList, 
+	drunken_octo<T, S> **parent,
+	int (* compare)( S *A, S *B, int rank),
+	int k,
+	int _depth)
+{
+    if( nodeList->size() > 0 )
+    {
+	int retVal = splitList( 
+	    nodeList,
+	    compare,
+	    0,
+	    nodeList->size() - 1,
+	    nodeList->size() / 2,
+	    _depth%k); 	
+
+	*parent = nodeList->at(retVal);
+	S*  pos = (*parent)->getPosition();
+	std::cout << *pos << std::endl;
+	(*parent)->setDepth(_depth);
+	if( nodeList->size() == 2 )
+	{
+
+	}
+	if( nodeList->size() > 2 )
+	{
+	    std::vector<drunken_octo<T, S> *> left(nodeList->begin(), nodeList->begin() + retVal);
+	    std::vector<drunken_octo<T, S> *> right(nodeList->begin() + retVal + 1, nodeList->end());
+	    std::cout << "Left size = " << left.size() << ", right size = " << right.size() << std::endl;
+	    buildTree( &left, &((*parent)->children[0]), compare, k, _depth+1);
+	    buildTree( &right, &((*parent)->children[1]), compare, k, _depth+1);
+	}
+    }
 }
 
 template <class T, class S> void drunken_octo<T, S>::addNode(
@@ -160,7 +199,7 @@ template <class T, class S> void drunken_octo<T, S>::addNode(
     if(children[i] == NULL)
     {
         children[i] = newNode;
-	newNode->setRank( depth );
+	newNode->setDepth ( depth );
     }
     else
     {
@@ -174,9 +213,9 @@ template <class T, class S> void drunken_octo<T, S>::addNode(
     leaf = false;
 }
 
-template <class T, class S> void drunken_octo<T, S>::setRank( int _rank )
+template <class T, class S> void drunken_octo<T, S>::setDepth( int _depth )
 {
-    depth = _rank;
+    depth = _depth;
 }
 
 template <class T, class S> void drunken_octo<T, S>::getLeaves( std::vector<drunken_octo<T, S> *> *leavesList )

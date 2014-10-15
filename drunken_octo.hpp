@@ -74,6 +74,12 @@ public:
     void getLeaves( std::vector<drunken_octo<T, S> *> *leavesList );
     // Compares a node with another one
     // Retrieve the N closest leaves to a specific point, where a metric function is specified.
+    void findNN( 
+	drunken_octo<T, S>** currentBest,
+	double currentDist,
+	S *target,
+	double (* metricFunc)( S *target, S *current)
+	);
     //void getNeighbours( S *position, double ( * metric )( S *a, S *b), int N, std::vector<drunken_octo<T, S> *> *leavesList);
 };
 

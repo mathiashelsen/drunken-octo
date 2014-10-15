@@ -32,31 +32,42 @@ THE SOFTWARE.
 #include <gsl/gsl_rng.h>
 #include <boost/random.hpp>
 #include <boost/random/mersenne_twister.hpp>
+#include <math.h>
 
-int comparef( double *a, double *b, int rank)
-{
-    if( *a < *b )
-    {
-	return -1;
-    }
-    if( *a == *b)
-    {
-	return 0;
-    }
-    else
-    {
-	return 1;
-    }
-}
 
 typedef drunken_octo<double, double> Node1D;
 void benchmark_quickselect();
 void benchmark_buildtree();
 
+
+int comparef( double *a, double *b, int rank);
+double metric( double *a, double *b );
+double pDist(double *a, double *b, int rank);
+
+
 int
 main(int argc, char **argv)
 {
-    benchmark_buildtree();
+    double f = 0.0;
+    std::vector< drunken_octo<double, double> *> nodes;
+    for(int i = 0; i < 10; i++)
+    {
+	f = (double)i;
+	Node1D *newNode = new Node1D( &f, &f );
+	nodes.push_back(newNode);
+    } 
+
+    Node1D *root = NULL;
+    Node1D *NN = NULL;
+    double distance = 1.0e6;
+    double target = 2.5;
+    buildTree<double, double>( &nodes, &root, &comparef, 1, 0);
+    root->findNN( &NN, &distance, &target, &metric, &pDist, 1 );
+    double *NNposition = NN->getPosition();
+    std::cout << "NN position: " << *NNposition << std::endl;
+    delete root;
+
+    //benchmark_buildtree();
 
     //benchmark_quickselect();
 
@@ -167,4 +178,32 @@ void test_quickselect()
 	std::cout << data << ", ";
     }
     std::cout << std::endl;
+}
+
+int comparef( double *a, double *b, int rank)
+{
+    if( *a < *b )
+    {
+	return -1;
+    }
+    if( *a == *b)
+    {
+	return 0;
+    }
+    else
+    {
+	return 1;
+    }
+}
+
+double metric( double *a, double *b )
+{
+    double aval = *a;
+    double bval = *b;
+    return ( (aval-bval)*(aval-bval) );
+}
+
+double pDist(double *a, double *b, int rank)
+{
+    return copysign((*a - *b)*(*a - *b), (*a - *b) );
 }

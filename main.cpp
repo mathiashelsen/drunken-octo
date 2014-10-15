@@ -51,20 +51,12 @@ int comparef( double *a, double *b, int rank)
 
 typedef drunken_octo<double, double> Node1D;
 void benchmark_quickselect();
+void benchmark_buildtree();
 
 int
 main(int argc, char **argv)
 {
-    std::vector< drunken_octo<double, double> *> nodes;
-    for(int i = 0; i < 9; i++)
-    {
-	double f = (double) i;
-	Node1D *newNode = new Node1D( &f, &f);
-	nodes.push_back(newNode);
-    } 
-
-    Node1D *root = NULL;
-    buildTree<double, double>( &nodes, &root, &comparef, 1, 0);
+    benchmark_buildtree();
 
     //benchmark_quickselect();
 
@@ -102,6 +94,39 @@ void benchmark_quickselect()
 	    delete *it;	
 	}
 	delete rng;
+    }
+}
+
+
+void benchmark_buildtree()
+{
+    int sizeList = 1000;
+    while(sizeList <= 10000000)
+    {
+	boost::mt19937 *rng = new boost::mt19937();
+	static boost::uniform_01<boost::mt19937> generator(*rng);
+	std::vector< drunken_octo<double, double> *> nodes;
+
+	double f = 0.0;
+	for(int i = 0; i < sizeList; i++)
+	{
+	    f = generator();
+	    Node1D *newNode = new Node1D( &f, &f );
+	    nodes.push_back(newNode);
+	} 
+
+	Timer tm;
+	std::ostringstream ooo;
+	std::string str;
+
+	tm.start();
+	Node1D *root = NULL;
+	buildTree<double, double>( &nodes, &root, &comparef, 1, 0);
+	tm.stop();
+	std::cout << sizeList << "\t" << tm.duration() << std::endl;
+	sizeList *= 2;
+	delete rng;
+	delete root;
     }
 }
 

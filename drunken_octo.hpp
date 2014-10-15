@@ -155,9 +155,8 @@ template <class T, class S> drunken_octo<T, S>::~drunken_octo()
     {
 	delete children[1];
     }
-
-    //delete[] children;
 }
+
 template <class T, class S> void drunken_octo<T, S>::findNN( 
 	drunken_octo<T, S>** currentBest,
 	double *currentDist,
@@ -167,28 +166,28 @@ template <class T, class S> void drunken_octo<T, S>::findNN(
 	int k
 	)
 {
-    std::cout << "Investigating node at " << nodePosition << ", located at a distance of ";
+//    std::cout << "Investigating node at " << nodePosition << ", located at a distance of ";
     // Check if the current node is closer than the previous best estimate
     double dist = metricFunc( target, &nodePosition );
-    std::cout << dist << std::endl;
+    //std::cout << dist << std::endl;
     if( dist < *currentDist )
     {	
-	std::cout << "This node is closer than the previous node, replacing it as best one" << std::endl;
+	//std::cout << "This node is closer than the previous node, replacing it as best one" << std::endl;
 	*currentBest = this;
 	*currentDist = dist;
     }
 
     // Can some of the points on the left seperating hyperplane provide a better match?
     dist = projectedDistance( target, &nodePosition, depth%k );
-    std::cout << "Distance of target to seperating hyperplane = " << dist << std::endl;
+    //std::cout << "Distance of target to seperating hyperplane = " << dist << std::endl;
     if( (children[0] != NULL) && (dist <= 0.0) )
     {
-	std::cout << "Checking out child-0" << std::endl;
+	//std::cout << "Checking out child-0" << std::endl;
 	children[0]->findNN(currentBest, currentDist, target, metricFunc, projectedDistance, k);
     }
     if( (children[1] != NULL) && (dist >= 0.0) )
     {
-	std::cout << "Checking out child-1" << std::endl;
+	//std::cout << "Checking out child-1" << std::endl;
 	children[1]->findNN(currentBest, currentDist, target, metricFunc, projectedDistance, k);
     }
 }

@@ -43,7 +43,7 @@ typedef struct
     double y;
 } vector;
 
-typedef drunken_octo<vector, vector> Node;
+typedef drunken_octo<int, vector> Node;
 
 int comparef( vector *a, vector *b, int rank);
 double metric( vector *a, vector *b );
@@ -52,31 +52,57 @@ double pDist(vector *a, vector *b, int rank);
 int
 main(int argc, char **argv)
 {
-    std::vector< drunken_octo<vector, vector> *> nodes;
+    std::vector< drunken_octo<int, vector> *> nodes;
 
-    double xs[4] = {2.0, 3.0, 6.0, 8.0};
-    double ys[4] = {5.0, 8.0, 3.0, 9.0};
+    //double xs[4] = {2.0, 3.0, 6.0, 8.0};
+    //double ys[4] = {5.0, 8.0, 3.0, 9.0};
     vector f;
-    for(int i = 0; i < 4; i++ )
+
+    boost::mt19937 *rng = new boost::mt19937();
+    static boost::uniform_01<boost::mt19937> generator(*rng);
+
+
+    for(int i = 0; i < 10; i++ )
     {
-	f.x = xs[i];
-	f.y = ys[i];
-	Node *newNode = new Node( &f, &f );
+	f.x = generator()*10.0;
+	f.y = generator()*10.0;
+	std::cout << f.x << "\t" << f.y << "\t" << i << std::endl;
+	Node *newNode = new Node( &i, &f );
 	nodes.push_back(newNode);
     }
+    std::cout << std::endl << std::endl;
 
     Node *root = NULL;
     Node *NN = NULL;
-    double distance = 1.0e6;
     
-    buildTree<vector, vector>( &nodes, &root, &comparef, 1, 0);
-    vector *NNposition = root->getPosition();
-    std::cout << "root position: " << NNposition->x << ", " << NNposition->y << std::endl;
-    f.x = 3.0;
-    f.y = 5.0;
-    root->findNN( &NN, &distance, &f, &metric, &pDist, 1 );
-    NNposition = NN->getPosition();
-    std::cout << "NN position: " << NNposition->x << ", " << NNposition->y << std::endl;
+    buildTree<int, vector>( &nodes, &root, &comparef, 2, 0);
+
+    
+    f.x = 9.22;
+    f.y = 8.33;
+
+    double distance = 1.0e6;
+    root->findNN( &NN, &distance, &f, &metric, &pDist, 2 );
+    int *t = NN->getData();
+    std::cout << "# Found near node " << *t << std::endl;
+ 
+  
+    /* 
+    for(int i = 0; i < 1000; i++)
+    {
+	for(int j = 0; j < 1000; j++)
+	{
+	    f.x = 0.01*(double)i;
+	    f.y = 0.01*(double)j;
+
+	    double distance = 1.0e6;
+	    root->findNN( &NN, &distance, &f, &metric, &pDist, 2 );
+	    int *t = NN->getData();
+	    std::cout << f.x << "\t" << f.y << "\t" << *t << std::endl;
+	}
+    }
+    */
+    
     delete root;
 
     //benchmark_buildtree();
@@ -117,5 +143,7 @@ double pDist(vector *a, vector *b, int rank)
 {
     double *aval = (double *)a;
     double *bval = (double *)b;
+    //std::cout << "Asked to calculate distance between (" << aval[0] << ", " << aval[1] << ") and ";
+    //std::cout << "(" << bval[0] << ", " << bval[1] << ")" << std::endl;
     return copysign((aval[rank]-bval[rank])*(aval[rank]-bval[rank]), (aval[rank]-bval[rank]) );
 }

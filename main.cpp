@@ -62,7 +62,7 @@ main(int argc, char **argv)
     static boost::uniform_01<boost::mt19937> generator(*rng);
 
 
-    for(int i = 0; i < 10; i++ )
+    for(int i = 0; i < 100; i++ )
     {
 	f.x = generator()*10.0;
 	f.y = generator()*10.0;

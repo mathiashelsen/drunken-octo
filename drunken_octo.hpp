@@ -29,6 +29,7 @@ THE SOFTWARE.
 #include <string.h>
 #include <iostream>
 #include <algorithm>
+#include <math.h>
 
 template <class T, class S> class drunken_octo
 {
@@ -138,7 +139,6 @@ template <class T, class S> drunken_octo<T, S>::drunken_octo (
 {
     memcpy( &nodeData, dataPoint, sizeof(T) );
     memcpy( &nodePosition, position, sizeof(S) );
-    //std::cout << nodeData << std::endl;
     depth = 0;
     leaf = true;
 
@@ -167,59 +167,46 @@ template <class T, class S> void drunken_octo<T, S>::findNN(
 	int k
 	)
 {
-  //  std::cout << "Investigating node " << nodeData << ", located at a distance of ";
     // Check if the current node is closer than the previous best estimate
     double dist = metricFunc( target, &nodePosition );
- //   std::cout << dist << std::endl;
     if( dist < *currentDist )
     {	
-//	std::cout << "This node is closer than the previous node, replacing it as best one" << std::endl;
 	*currentBest = this;
 	*currentDist = dist;
     }
 
     // Can some of the points on the left seperating hyperplane provide a better match?
     dist = projectedDistance( target, &nodePosition, depth%k );
-    //std::cout << "Distance of target to seperating hyperplane = " << dist << std::endl;
-
-    // If the target lies "lower" than our current node...
-    if( dist <= 0.0 )
+    
+    // Make sure the target doesn't lie on the hyperplane
+    if( dist != 0.0 )
     {
-	//std::cout << "Going to check child-0 of node " << nodeData << std::endl;
-	if(children[0] != NULL)
+	int i = ( dist < 0.0 ) ? 0 : 1;
+	if(children[i] != NULL)
 	{
-	 //   std::cout << "Checking out child-0 of node " << nodeData  << std::endl;
-	    children[0]->findNN(currentBest, currentDist, target, metricFunc, projectedDistance, k);
+	    children[i]->findNN(currentBest, currentDist, target, metricFunc, projectedDistance, k);
 	}
 	// Is the can it lie on other side of the seperating hyperplane?
-	if( (-dist) < *currentDist )
+	if( fabs(dist) < *currentDist )
 	{
-	    //std::cout << "Intersection with seperating hyperplane" << std::endl;
-	    if(children[1] != NULL)
+	    if(children[1-i] != NULL)
 	    {
-	//	std::cout << "Checking out child-1 of node " << nodeData << std::endl;
-		children[1]->findNN(currentBest, currentDist, target, metricFunc, projectedDistance, k);
+		children[1-i]->findNN(currentBest, currentDist, target, metricFunc, projectedDistance, k);
 	    }
 	}	
-    }
 
-    else if( dist >= 0.0 )
+    }
+    else
     {
-	//std::cout << "Going to check child-1" << std::endl;
+	if(children[0] != NULL)
+	{
+	    children[0]->findNN(currentBest, currentDist, target, metricFunc, projectedDistance, k);
+	}
 	if(children[1] != NULL)
 	{
-	    //std::cout << "Checking out child-1 of node " << nodeData << std::endl;
 	    children[1]->findNN(currentBest, currentDist, target, metricFunc, projectedDistance, k);
 	}
-	if( dist < *currentDist )
-	{
-	    //std::cout << "Intersection with seperating hyperplane" << std::endl;
-	    if(children[0] != NULL)
-	    {
-		//std::cout << "Checking out child-0 of node " << nodeData << std::endl;
-		children[0]->findNN(currentBest, currentDist, target, metricFunc, projectedDistance, k);
-	    }
-	}
+
     }
 }
 

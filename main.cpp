@@ -85,7 +85,7 @@ main(int argc, char **argv)
     double distance = 1.0e6;
     root->findNN( &NN, &distance, &f, &metric, &pDist, 2 );
     int *t = NN->getData();
-    std::cout << "# Found near node " << *t << std::endl;
+    //std::cout << "# Found near node " << *t << std::endl;
  
   
    

@@ -34,81 +34,79 @@ THE SOFTWARE.
 #include <boost/random/mersenne_twister.hpp>
 #include <math.h>
 
+#define NDIMS 4
+
 void benchmark_quickselect();
 void benchmark_buildtree();
 
 typedef struct
 {
-    double x;
-    double y;
+    double x[NDIMS];
 } vector;
 
-typedef drunken_octo<int, vector> Node;
+typedef drunken_octo<double, vector> Node;
 
 int comparef( vector *a, vector *b, int rank);
 double metric( vector *a, vector *b );
 double pDist(vector *a, vector *b, int rank);
+double function(vector *a);
 
 int
 main(int argc, char **argv)
 {
-    std::vector< drunken_octo<int, vector> *> nodes;
+    int trainingpoints = 100;
+    while(trainingpoints < 1000000)
+    {
+    std::vector< drunken_octo<double, vector> *> training_data;
 
-    //double xs[4] = {2.0, 3.0, 6.0, 8.0};
-    //double ys[4] = {5.0, 8.0, 3.0, 9.0};
     vector f;
+    double *p = (double *) &f;
+    double val;
 
     boost::mt19937 *rng = new boost::mt19937();
     static boost::uniform_01<boost::mt19937> generator(*rng);
 
 
-    for(int i = 0; i < 100; i++ )
+    for(int i = 0; i < trainingpoints; i++ )
     {
-	f.x = generator()*10.0;
-	f.y = generator()*10.0;
-	std::cout << f.x << "\t" << f.y << "\t" << i << std::endl;
-	Node *newNode = new Node( &i, &f );
-	nodes.push_back(newNode);
+	for(int j = 0; j < NDIMS; j++ )
+	{
+	    p[j] = generator()*20.0 - 10.0;
+	}
+	val = function( &f );
+	Node *newNode = new Node( &val, &f );
+	training_data.push_back(newNode);
     }
-    std::cout << std::endl << std::endl;
 
     Node *root = NULL;
     Node *NN = NULL;
     
-    buildTree<int, vector>( &nodes, &root, &comparef, 2, 0);
-
-    
-    f.x = 9.22;
-    f.y = 8.33;
-
-    
-    double distance = 1.0e6;
-    root->findNN( &NN, &distance, &f, &metric, &pDist, 2 );
-    int *t = NN->getData();
-    //std::cout << "# Found near node " << *t << std::endl;
- 
-  
-   
-    for(int i = 0; i < 1000; i++)
+    buildTree<double, vector>( &training_data, &root, &comparef, NDIMS, 0);
+    int err = 0;
+    int ntestpoints = 1000;
+    for( int i = 0; i < ntestpoints; i++ )
     {
-	for(int j = 0; j < 1000; j++)
+	for(int j = 0; j < NDIMS; j++ )
 	{
-	    f.x = 0.01*(double)i;
-	    f.y = 0.01*(double)j;
-
-	    double distance = 1.0e6;
-	    root->findNN( &NN, &distance, &f, &metric, &pDist, 2 );
-	    int *t = NN->getData();
-	    std::cout << f.x << "\t" << f.y << "\t" << *t << std::endl;
+	    p[j] = generator()*20.0 - 10.0;
+	}
+	val = function( &f );
+	double distance = 1.0e6;
+	NN = NULL;
+	root->findNN( &NN, &distance, &f, &metric, &pDist, 2 );
+	double *t = NN->getData();	
+	if( *t != val )
+	{   
+	    err++;
 	}
     }
-    
+    double success = (1.0 - ((double) err)/((double) ntestpoints))*100.0;
+    //std::cout << err << " errors on " << ntestpoints << " testing points, i.e. " << success << "% succesrate" << std::endl;
+    std::cout << trainingpoints << "\t" << success << std::endl;
+
     delete root;
-
-    //benchmark_buildtree();
-
-    //benchmark_quickselect();
-
+    trainingpoints *= 2;
+    }
     return 0;
 }
 
@@ -135,15 +133,42 @@ double metric( vector *a, vector *b )
 {
     double *aval = (double *)a;
     double *bval = (double *)b;
-    return ( (aval[0]-bval[0])*(aval[0]-bval[0])
-	+ (aval[1]-bval[1])*(aval[1]-bval[1]) );
+    double retval = 0.0;
+    for(int i = 0 ; i < NDIMS; i++ )
+    {
+	retval += (aval[i]-bval[i]) * (aval[i]-bval[i]);
+    }
+    return retval;
 }
 
 double pDist(vector *a, vector *b, int rank)
 {
     double *aval = (double *)a;
     double *bval = (double *)b;
-    //std::cout << "Asked to calculate distance between (" << aval[0] << ", " << aval[1] << ") and ";
-    //std::cout << "(" << bval[0] << ", " << bval[1] << ")" << std::endl;
     return copysign((aval[rank]-bval[rank])*(aval[rank]-bval[rank]), (aval[rank]-bval[rank]) );
+}
+
+
+double function(vector *a)
+{
+    double *A = (double *) a;
+    double retval = 1.0;
+
+    if( A[0] > 4.0 )
+    {
+	retval *= -1.0;
+    }
+    if( A[1] < 2.0 )
+    {
+	retval *= -1.0;
+    }
+    if( (A[2] > -3.0) && (A[2] < 3.0))
+    {
+	retval *= -1.0;
+    }
+    if( A[3] > 3.0 )
+    {
+	retval *= -1.0;
+    }
+    return retval;
 }

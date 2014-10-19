@@ -62,10 +62,10 @@ main(int argc, char **argv)
     for(int i = 0 ; i < 20; i++ )
     {
 	double *f = new double;
-	*f = (double) i;
+	*f = generator();
 	double h = generator();
 	myList.insert( f, h );
-	std::cout << h << "\t" << *f << std::endl;
+	std::cout << myList.getMax() << std::endl;
     }
 
     double *data;
@@ -73,7 +73,7 @@ main(int argc, char **argv)
     myList.getNext( &data, &dist );
     while( data != NULL )
     {
-	std::cout << "#" << *data << " at a distance " << dist << std::endl;
+	std::cout << *data << " at a distance " << dist << std::endl;
 	myList.getNext( &data, &dist );
     }
     std::cout << std::endl;

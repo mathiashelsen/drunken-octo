@@ -21,6 +21,7 @@ private:
     int maxElems;
 public:
     Sorted_LL( int _maxElems );
+    ~Sorted_LL();
     void insert( T* _Node, double _dist );
     void getNext( T **_Node, double *_dist);
     double getMax(){ return max; };
@@ -34,6 +35,20 @@ template <class T> Sorted_LL<T>::Sorted_LL( int _maxElems )
     nElems = 0;
     root = NULL;
     curr = NULL;
+}
+
+template <class T> Sorted_LL<T>::~Sorted_LL()
+{
+    list_elem<T> *it = root;
+    if( root != NULL )
+    {
+	while(it->nextElem != NULL)
+	{
+	    it = it->nextElem;
+	    delete it->prevElem;
+	}
+	delete it;
+    }
 }
 
 template <class T> void Sorted_LL<T>::insert( T* _Node, double _dist )

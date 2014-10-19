@@ -31,6 +31,8 @@ THE SOFTWARE.
 #include <algorithm>
 #include <math.h>
 
+#include "sorted_ll.hpp"
+
 template <class T, class S> class drunken_octo
 {
 private:
@@ -83,6 +85,14 @@ public:
 	double (* projectedDistance)( S* target, S *current, int rank),
 	int k );
     //void getNeighbours( S *position, double ( * metric )( S *a, S *b), int N, std::vector<drunken_octo<T, S> *> *leavesList);
+    void findNN(
+	Sorted_LL< drunken_octo<T, S> > *NN,
+	S *target,
+	double (* metricFunc)( S *target, S *current),
+	double (* projectedDistance)( S* target, S *current, int rank),
+	int k,
+	int numNeighbours );
+	
 };
 
 template <class T, class S> static int partition(
@@ -206,8 +216,57 @@ template <class T, class S> void drunken_octo<T, S>::findNN(
 	{
 	    children[1]->findNN(currentBest, currentDist, target, metricFunc, projectedDistance, k);
 	}
+    }
+}
+
+template <class T, class S> void drunken_octo<T, S>::findNN(
+	Sorted_LL< drunken_octo<T, S> > *NN,
+	S *target,
+	double (* metricFunc)( S *target, S *current),
+	double (* projectedDistance)( S* target, S *current, int rank),
+	int k,
+	int numNeighbours )
+{
+    // Check if the current node is closer than the previous best estimate
+    double dist = metricFunc( target, &nodePosition );
+    if( (dist < NN->getMax()) || (numNeighbours > NN->getElements()) )
+    {	
+	NN->insert(this, dist);
+    }
+
+    // Can some of the points on the left seperating hyperplane provide a better match?
+    dist = projectedDistance( target, &nodePosition, depth%k );
+    
+    // Make sure the target doesn't lie on the hyperplane
+    if( dist != 0.0 )
+    {
+	int i = ( dist < 0.0 ) ? 0 : 1;
+	if(children[i] != NULL)
+	{
+	    children[i]->findNN(NN, target, metricFunc, projectedDistance, k, numNeighbours);
+	}
+	// Can it lie on other side of the seperating hyperplane? (or aren't there enough datapoints)
+	if( (fabs(dist) < NN->getMax()) || (numNeighbours > NN->getElements()) )
+	{
+	    if(children[1-i] != NULL)
+	    {
+		children[1-i]->findNN(NN, target, metricFunc, projectedDistance, k, numNeighbours);
+	    }
+	}	
 
     }
+    else
+    {
+	if(children[0] != NULL)
+	{
+	    children[0]->findNN(NN, target, metricFunc, projectedDistance, k, numNeighbours);
+	}
+	if(children[1] != NULL)
+	{
+	    children[1]->findNN(NN, target, metricFunc, projectedDistance, k, numNeighbours);
+	}
+    }
+
 }
 
 template <class T, class S> void buildTree( 

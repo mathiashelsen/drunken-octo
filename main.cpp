@@ -35,7 +35,7 @@ THE SOFTWARE.
 #include <boost/random/mersenne_twister.hpp>
 #include <math.h>
 
-#define NDIMS 4
+#define NDIMS 2
 
 void benchmark_quickselect();
 void benchmark_buildtree();
@@ -55,84 +55,53 @@ double function(vector *a);
 int
 main(int argc, char **argv)
 {
+    double p[NDIMS];
+    vector *f = (vector *)p;
 
-    Sorted_LL<double> myList = Sorted_LL<double>( 10 );
-    boost::mt19937 *rng = new boost::mt19937();
-    static boost::uniform_01<boost::mt19937> generator(*rng);
-    for(int i = 0 ; i < 20; i++ )
-    {
-	double *f = new double;
-	*f = generator();
-	double h = generator();
-	myList.insert( f, h );
-	std::cout << myList.getMax() << std::endl;
-    }
-
-    double *data;
-    double dist;
-    myList.getNext( &data, &dist );
-    while( data != NULL )
-    {
-	std::cout << *data << " at a distance " << dist << std::endl;
-	myList.getNext( &data, &dist );
-    }
-    std::cout << std::endl;
-
-    /*
     int trainingpoints = 100;
-    while(trainingpoints < 1000000)
-    {
     std::vector< drunken_octo<double, vector> *> training_data;
 
-    vector f;
-    double *p = (double *) &f;
-    double val;
-
     boost::mt19937 *rng = new boost::mt19937();
     static boost::uniform_01<boost::mt19937> generator(*rng);
-
 
     for(int i = 0; i < trainingpoints; i++ )
     {
 	for(int j = 0; j < NDIMS; j++ )
 	{
 	    p[j] = generator()*20.0 - 10.0;
+	    std::cout << p[j] << "\t";
 	}
-	val = function( &f );
-	Node *newNode = new Node( &val, &f );
+	std::cout << std::endl;
+	double val = (double)i;
+	Node *newNode = new Node( &val, f );
 	training_data.push_back(newNode);
     }
+    std::cout << std::endl;
+    std::cout << std::endl;
 
     Node *root = NULL;
-    Node *NN = NULL;
+    Sorted_LL< drunken_octo< double, vector> > *nn = new Sorted_LL< drunken_octo< double, vector> >(10);
     
     buildTree<double, vector>( &training_data, &root, &comparef, NDIMS, 0);
-    int err = 0;
-    int ntestpoints = 1000;
-    for( int i = 0; i < ntestpoints; i++ )
+    p[0] = 0.0;
+    p[1] = 0.0;
+
+    root->findNN( nn, f, metric, pDist, NDIMS, 10 );
+
+    drunken_octo<double, vector> *data;
+    double dist;
+    nn->getNext( &data, &dist );
+    double *q = (double *)f;
+    while( data != NULL )
     {
-	for(int j = 0; j < NDIMS; j++ )
-	{
-	    p[j] = generator()*20.0 - 10.0;
-	}
-	val = function( &f );
-	double distance = 1.0e6;
-	NN = NULL;
-	root->findNN( &NN, &distance, &f, &metric, &pDist, 2 );
-	double *t = NN->getData();	
-	if( *t != val )
-	{   
-	    err++;
-	}
+	f = data->getPosition();
+	q = (double *)f;
+	std::cout << q[0] << "\t" << q[1] << std::endl;
+	nn->getNext( &data, &dist );
     }
-    double success = (1.0 - ((double) err)/((double) ntestpoints))*100.0;
-    //std::cout << err << " errors on " << ntestpoints << " testing points, i.e. " << success << "% succesrate" << std::endl;
-    std::cout << trainingpoints << "\t" << success << std::endl;
 
     delete root;
-    trainingpoints *= 2;
-    }
-    */
+    delete nn;
     return 0;
 }
 

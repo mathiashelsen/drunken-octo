@@ -57,12 +57,16 @@ main(int argc, char **argv)
 {
 
     Sorted_LL<double> myList = Sorted_LL<double>( 10 );
+    boost::mt19937 *rng = new boost::mt19937();
+    static boost::uniform_01<boost::mt19937> generator(*rng);
     for(int i = 0 ; i < 20; i++ )
     {
 	double *f = new double;
-	*f = 1.0*(double)i;
+	*f = generator();
+	std::cout << "	Trying to insert " << *f << std::endl;
 	myList.insert( f, *f );
     }
+
     double *g = myList.getNext();
     while( g != NULL )
     {

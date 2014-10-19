@@ -63,6 +63,14 @@ main(int argc, char **argv)
 	*f = 1.0*(double)i;
 	myList.insert( f, *f );
     }
+    double *g = myList.getNext();
+    while( g != NULL )
+    {
+	std::cout << *g << ", ";
+	g = myList.getNext();
+    }
+    std::cout << std::endl;
+
     /*
     int trainingpoints = 100;
     while(trainingpoints < 1000000)

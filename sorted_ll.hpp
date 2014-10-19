@@ -53,17 +53,14 @@ template <class T> void Sorted_LL<T>::insert( T* _Node, double _dist )
 	else
 	{
 	    list_elem<T> *it = root; 
-	    std::cout << "Checking out node " << *(it->Node )<< " at distance " << it->dist << std::endl;
 	    while( (it->nextElem != NULL) && (it->dist < _dist) )
 	    {
-		std::cout << "Checking out node " << *(it->Node )<< " at distance " << it->dist << std::endl;
 		it = it->nextElem;
 	    }
 
 	    //Append to the end of the list if it is short enough
 	    if( (it->nextElem == NULL) && (nElems < maxElems) )
 	    {
-		std::cout << "Adding node" << std::endl;
 		it->nextElem = newElem;
 		newElem->nextElem = NULL;
 		nElems++;

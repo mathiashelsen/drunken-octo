@@ -22,7 +22,9 @@ private:
 public:
     Sorted_LL( int _maxElems );
     void insert( T* _Node, double _dist );
-    T* getNext();
+    void getNext( T **_Node, double *_dist);
+    double getMax(){ return max; };
+    int getElements(){ return nElems; };
 };
 
 template <class T> Sorted_LL<T>::Sorted_LL( int _maxElems )
@@ -42,6 +44,7 @@ template <class T> void Sorted_LL<T>::insert( T* _Node, double _dist )
 	newElem->Node = _Node;
 	newElem->dist = _dist;
 	list_elem<T> *it = root;
+	// If root is not null
 	if( it != NULL )
 	{
 	    // Keep iterating over the elements until it is either the last
@@ -51,10 +54,9 @@ template <class T> void Sorted_LL<T>::insert( T* _Node, double _dist )
 		it = it->nextElem;
 	    }
 
-	    // Append before...
+	    // Append before if the iterator value is larger than the new value
 	    if( it->dist > newElem->dist )
 	    {
-		std::cout << "Inserting " << *(newElem->Node) << " before " << *(it->Node) << std::endl;
 		newElem->prevElem = it->prevElem;
 		newElem->nextElem = it;
 		if(newElem->prevElem != NULL) newElem->prevElem->nextElem = newElem;
@@ -62,16 +64,16 @@ template <class T> void Sorted_LL<T>::insert( T* _Node, double _dist )
 		if( it == root ) root = newElem;
 		nElems++;
 	    }
-	    // append after...
+	    // append after if it was the last value on the list
 	    else
 	    {
-		std::cout << "Inserting " << *(newElem->Node) << " after " << *(it->Node) << std::endl;
 		newElem->prevElem = it;
 		newElem->nextElem = NULL;
 		newElem->prevElem->nextElem = newElem;
 		nElems++;
 	    }
 
+	    // Perhaps we have to update the maximum value
 	    if( newElem->dist > max )
 	    {
 		max = newElem->dist;
@@ -92,9 +94,9 @@ template <class T> void Sorted_LL<T>::insert( T* _Node, double _dist )
 	    }
 	    
 	}
+	// The new node will be root
 	else
 	{
-	    std::cout << "Setting " << *(newElem->Node) << " as root" << std::endl;
 	    root = newElem;
 	    newElem->nextElem = NULL;
 	    newElem->prevElem = NULL;
@@ -103,7 +105,7 @@ template <class T> void Sorted_LL<T>::insert( T* _Node, double _dist )
 	}
     }
 }
-template <class T> T* Sorted_LL<T>::getNext()
+template <class T> void Sorted_LL<T>::getNext(T **_Node, double *_dist)
 {
     if( curr == NULL )
     {
@@ -116,11 +118,13 @@ template <class T> T* Sorted_LL<T>::getNext()
 
     if( curr != NULL )
     {
-	return curr->Node;
+	*_Node = curr->Node;
+	*_dist = curr->dist;
     }
     else
     {
-	return NULL;
+	*_Node = NULL;
+	*_dist = 0;
     }
 }
 

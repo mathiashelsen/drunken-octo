@@ -62,16 +62,19 @@ main(int argc, char **argv)
     for(int i = 0 ; i < 20; i++ )
     {
 	double *f = new double;
-	*f = generator();
-	std::cout << "	Trying to insert " << *f << std::endl;
-	myList.insert( f, *f );
+	*f = (double) i;
+	double h = generator();
+	myList.insert( f, h );
+	std::cout << h << "\t" << *f << std::endl;
     }
 
-    double *g = myList.getNext();
-    while( g != NULL )
+    double *data;
+    double dist;
+    myList.getNext( &data, &dist );
+    while( data != NULL )
     {
-	std::cout << *g << ", ";
-	g = myList.getNext();
+	std::cout << "#" << *data << " at a distance " << dist << std::endl;
+	myList.getNext( &data, &dist );
     }
     std::cout << std::endl;
 

@@ -23,6 +23,7 @@ THE SOFTWARE.
 */
 
 #include "drunken_octo.hpp"
+#include "sorted_ll.hpp"
 #include "timer.hpp"
 
 #include <iostream>
@@ -54,6 +55,15 @@ double function(vector *a);
 int
 main(int argc, char **argv)
 {
+
+    Sorted_LL<double> myList = Sorted_LL<double>( 10 );
+    for(int i = 0 ; i < 20; i++ )
+    {
+	double *f = new double;
+	*f = 1.0*(double)i;
+	myList.insert( f, *f );
+    }
+    /*
     int trainingpoints = 100;
     while(trainingpoints < 1000000)
     {
@@ -107,6 +117,7 @@ main(int argc, char **argv)
     delete root;
     trainingpoints *= 2;
     }
+    */
     return 0;
 }
 

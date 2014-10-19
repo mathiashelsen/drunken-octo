@@ -5,7 +5,7 @@
 
 template <typename T> struct list_elem
 {
-    T* Node;
+    T* data;
     double dist;
     list_elem<T> *nextElem;
     list_elem<T> *prevElem;
@@ -22,8 +22,8 @@ private:
 public:
     Sorted_LL( int _maxElems );
     ~Sorted_LL();
-    void insert( T* _Node, double _dist );
-    void getNext( T **_Node, double *_dist);
+    void insert( T* _data, double _dist );
+    void getNext( T **_data, double *_dist);
     double getMax(){ return max; };
     int getElements(){ return nElems; };
 };
@@ -51,12 +51,12 @@ template <class T> Sorted_LL<T>::~Sorted_LL()
     }
 }
 
-template <class T> void Sorted_LL<T>::insert( T* _Node, double _dist )
+template <class T> void Sorted_LL<T>::insert( T* _data, double _dist )
 {
     if( (_dist < max) || (nElems < maxElems) )
     {
 	list_elem<T> *newElem = new list_elem<T>;
-	newElem->Node = _Node;
+	newElem->data = _data;
 	newElem->dist = _dist;
 	list_elem<T> *it = root;
 	// If root is not null
@@ -120,7 +120,7 @@ template <class T> void Sorted_LL<T>::insert( T* _Node, double _dist )
 	}
     }
 }
-template <class T> void Sorted_LL<T>::getNext(T **_Node, double *_dist)
+template <class T> void Sorted_LL<T>::getNext(T **_data, double *_dist)
 {
     if( curr == NULL )
     {
@@ -133,12 +133,12 @@ template <class T> void Sorted_LL<T>::getNext(T **_Node, double *_dist)
 
     if( curr != NULL )
     {
-	*_Node = curr->Node;
+	*_data = curr->data;
 	*_dist = curr->dist;
     }
     else
     {
-	*_Node = NULL;
+	*_data = NULL;
 	*_dist = 0;
     }
 }

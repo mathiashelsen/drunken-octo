@@ -35,7 +35,7 @@ THE SOFTWARE.
 #include <boost/random/mersenne_twister.hpp>
 #include <math.h>
 
-#define NDIMS 2
+#define NDIMS 4
 
 void benchmark_quickselect();
 void benchmark_buildtree();
@@ -58,7 +58,8 @@ main(int argc, char **argv)
     double p[NDIMS];
     vector *f = (vector *)p;
 
-    int trainingpoints = 100;
+    int trainingpoints = 1000;
+    int testpoints = 200000;
     std::vector< drunken_octo<double, vector> *> training_data;
 
     boost::mt19937 *rng = new boost::mt19937();
@@ -69,39 +70,65 @@ main(int argc, char **argv)
 	for(int j = 0; j < NDIMS; j++ )
 	{
 	    p[j] = generator()*20.0 - 10.0;
-	    std::cout << p[j] << "\t";
 	}
-	std::cout << std::endl;
-	double val = (double)i;
+	double val = function( f );
 	Node *newNode = new Node( &val, f );
 	training_data.push_back(newNode);
     }
-    std::cout << std::endl;
-    std::cout << std::endl;
 
     Node *root = NULL;
-    Sorted_LL< drunken_octo< double, vector> > *nn = new Sorted_LL< drunken_octo< double, vector> >(10);
-    
     buildTree<double, vector>( &training_data, &root, &comparef, NDIMS, 0);
-    p[0] = 0.0;
-    p[1] = 0.0;
-
-    root->findNN( nn, f, metric, pDist, NDIMS, 10 );
-
-    drunken_octo<double, vector> *data;
-    double dist;
-    nn->getNext( &data, &dist );
-    double *q = (double *)f;
-    while( data != NULL )
+    int nn_test = 1;
+    
+    while( nn_test < 31 )
     {
-	f = data->getPosition();
-	q = (double *)f;
-	std::cout << q[0] << "\t" << q[1] << std::endl;
-	nn->getNext( &data, &dist );
-    }
+	int err = 0;
+	double avgDist = 0.0;
 
+	Timer tm;
+	std::ostringstream ooo;
+	std::string str;
+
+	tm.start();
+
+	for(int i = 0; i < testpoints; i++ )
+	{
+	    Sorted_LL< drunken_octo< double, vector> > *nn = new Sorted_LL< drunken_octo< double, vector> >(nn_test);
+
+	    for(int j = 0; j < NDIMS; j++ )
+	    {
+		p[j] = generator()*20.0 - 10.0;
+	    }
+	    double val = function( f );
+
+	    root->findNN( nn, f, metric, pDist, NDIMS, nn_test );
+	    drunken_octo<double, vector> *data;
+	    double dist;
+	    double sumDist = 0.0;
+	    double sumVal = 0.0;
+	    double *nnVal;
+	    nn->getNext( &data, &dist );
+	    while( data != NULL )
+	    {	
+		nnVal = data->getData();
+		sumVal += (*nnVal)/(dist);
+		//sumVal += *nnVal;
+		sumDist += 1.0/(dist);
+		avgDist += dist;
+		nn->getNext( &data, &dist );
+	    }
+	    sumVal /= sumDist;
+	    //sumVal /= (double) nn_test;
+	    sumVal = (sumVal > 0.0) ? 1.0 : -1.0;
+	    if( sumVal != val ) err++;
+	    delete nn;
+	}
+	tm.stop();
+	std::cout << nn_test << "\t" << 1.0 -( (double)err/(double)testpoints ) << "\t" << tm.duration() << std::endl;
+	nn_test++;
+    }
+    
     delete root;
-    delete nn;
     return 0;
 }
 
@@ -149,19 +176,19 @@ double function(vector *a)
     double *A = (double *) a;
     double retval = 1.0;
 
-    if( A[0] > 4.0 )
+    if( A[0] > 0.0 )
     {
 	retval *= -1.0;
     }
-    if( A[1] < 2.0 )
+    if( A[1] > 0.0 )
     {
 	retval *= -1.0;
     }
-    if( (A[2] > -3.0) && (A[2] < 3.0))
+    if( A[2] > 0.0 )
     {
 	retval *= -1.0;
     }
-    if( A[3] > 3.0 )
+    if( A[3] > 0.0 )
     {
 	retval *= -1.0;
     }

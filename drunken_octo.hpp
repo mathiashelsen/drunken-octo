@@ -65,9 +65,7 @@ public:
 	drunken_octo<T, S> **parent,
 	int (* compare)( S *A, S *B, int rank),
 	int k,
-	int depth,
-	int left,
-	int right );
+	int depth);
     // Get the data from a specific node
     T* getData() { return &nodeData; };
     // Get the position of a specific node

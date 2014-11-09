@@ -42,7 +42,7 @@ int vorotest()
     double p[NDIMS];
     vector *f = (vector *)p;
 
-    int trainingpoints = 50;
+    int trainingpoints = 1000;
     std::vector< drunken_octo<double, vector> *> training_data;
 
     boost::mt19937 *rng = new boost::mt19937();

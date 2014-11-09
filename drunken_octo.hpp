@@ -304,9 +304,7 @@ template <class T, class S> struct buildTree_t_args
 template <class T, class S> void *buildTree_t ( void *args )
 {
     struct buildTree_t_args<T, S> *ptr = (struct buildTree_t_args<T, S> *) args;
-    //std::cout << pthread_self() << "#New thread created at this point in the construction of the tree" << std::endl;
     buildTree(ptr->nodeList, ptr->parent, ptr->compare, ptr->k, ptr->_depth);
-    //std::cout << pthread_self() << "#Thread has finished" << std::endl;
     pthread_exit(NULL);
 }
 
@@ -329,16 +327,12 @@ template <class T, class S> void buildTree(
 
 	*parent = nodeList->at(retVal);
 	(*parent)->setDepth(_depth);
-	T* nodedata = (*parent)->getData();
-	//std::cout << "Thread " << pthread_self() << " says " << *nodedata << std::endl;
 	if( nodeList->size() > 1 )
 	{
 	    std::vector<drunken_octo<T, S> *> left(nodeList->begin(), nodeList->begin() + retVal);
 	    std::vector<drunken_octo<T, S> *> right(nodeList->begin() + retVal + 1, nodeList->end());
-	    //std::cout << pthread_self() << " left = " << left.size() << ", right = " << right.size() << std::endl;
 	    if( _depth == FORK_THREAD_DEPTH )
 	    {
-		//std::cout << pthread_self() << " found itself at FORK_THREAD_DEPTH" << std::endl;
 		pthread_t newThread; 
 		int fork = 0;
 		if( left.size() > 0 )
@@ -351,7 +345,6 @@ template <class T, class S> void buildTree(
 		    args.compare = compare;
 		    args.k = k;
 		    args._depth = _depth+1;
-		    //std::cout << pthread_self() << " is creating new thread at left" << std::endl;
 		    pthread_create( &newThread, NULL, buildTree_t<T, S>, (void *)&args );
 		}
 		if( (fork == 0) && (right.size() > 0) )
@@ -365,18 +358,15 @@ template <class T, class S> void buildTree(
 		    args.k = k;
 		    args._depth = _depth+1;
 
-		    //std::cout  << pthread_self() << " is creating new thread at right" << std::endl;
 		    pthread_create( &newThread, NULL, buildTree_t<T, S>, (void *)&args );
 		
 		}
 		else if( right.size() > 0 )
 		{
-		    //std::cout << pthread_self() << " is going recursive after forking" << std::endl;
 		    buildTree( &right, &((*parent)->children[1]), compare, k, _depth+1);
 		}
 		if( fork > 0 )
 		{
-		    //std::cout << pthread_self() << " is waiting for thread to finish" << std::endl;
 		    pthread_join( newThread, NULL );
 		}
 	    

@@ -25,11 +25,14 @@ THE SOFTWARE.
 #ifndef _DRUNKEN_OCTO_HPP
 #define _DRUNKEN_OCTO_HPP
 
+#define FORK_THREAD_DEPTH 2
+
 #include <vector>
 #include <string.h>
 #include <iostream>
 #include <algorithm>
 #include <math.h>
+#include <pthread.h>
 
 #include "sorted_ll.hpp"
 
@@ -217,6 +220,28 @@ template <class T, class S> void drunken_octo<T, S>::findNN(
     }
 }
 
+/*
+template <class T, class S> struct findNN_t_args_struct
+{
+    drunken_octo<T, S> *object;
+    Sorted_LL< drunken_octo<T, S> > *NN;
+    S *target;
+    double (* metricFunc)( S *target, S *current);
+    double (* projectedDistance)( S* target, S *current, int rank);
+    int k;
+    int numNeighbours;
+
+};
+
+template <class T, class S> void * findNN_t( void *args )
+{
+    printf("Created new thread, 
+    struct findNN_t_args_struct<T, S> *ptr = (struct findNN_t_args_struct<T, S> *)args;
+    (ptr->object).findNN( ptr->NN, ptr->target, ptr->metricFinc, ptr->projectedDistance, ptr->k, ptr->numNeighbours );
+    return NULL;
+}
+*/
+
 template <class T, class S> void drunken_octo<T, S>::findNN(
 	Sorted_LL< drunken_octo<T, S> > *NN,
 	S *target,
@@ -267,6 +292,24 @@ template <class T, class S> void drunken_octo<T, S>::findNN(
 
 }
 
+template <class T, class S> struct buildTree_t_args
+{
+    std::vector<drunken_octo<T, S> *> *nodeList;
+    drunken_octo<T, S> **parent;
+    int (* compare)( S *A, S *B, int rank);
+    int k;
+    int _depth;
+};
+
+template <class T, class S> void *buildTree_t ( void *args )
+{
+    struct buildTree_t_args<T, S> *ptr = (struct buildTree_t_args<T, S> *) args;
+    //std::cout << pthread_self() << "#New thread created at this point in the construction of the tree" << std::endl;
+    buildTree(ptr->nodeList, ptr->parent, ptr->compare, ptr->k, ptr->_depth);
+    //std::cout << pthread_self() << "#Thread has finished" << std::endl;
+    pthread_exit(NULL);
+}
+
 template <class T, class S> void buildTree( 
 	std::vector<drunken_octo<T, S> *> *nodeList, 
 	drunken_octo<T, S> **parent,
@@ -286,18 +329,69 @@ template <class T, class S> void buildTree(
 
 	*parent = nodeList->at(retVal);
 	(*parent)->setDepth(_depth);
+	T* nodedata = (*parent)->getData();
+	//std::cout << "Thread " << pthread_self() << " says " << *nodedata << std::endl;
 	if( nodeList->size() > 1 )
 	{
 	    std::vector<drunken_octo<T, S> *> left(nodeList->begin(), nodeList->begin() + retVal);
 	    std::vector<drunken_octo<T, S> *> right(nodeList->begin() + retVal + 1, nodeList->end());
-	    if( left.size() > 0 )
+	    //std::cout << pthread_self() << " left = " << left.size() << ", right = " << right.size() << std::endl;
+	    if( _depth == FORK_THREAD_DEPTH )
 	    {
-		buildTree( &left, &((*parent)->children[0]), compare, k, _depth+1);
+		//std::cout << pthread_self() << " found itself at FORK_THREAD_DEPTH" << std::endl;
+		pthread_t newThread; 
+		int fork = 0;
+		if( left.size() > 0 )
+		{
+		    fork++;
+
+		    struct buildTree_t_args<T, S> args;
+		    args.nodeList = &left;
+		    args.parent = &((*parent)->children[0]);
+		    args.compare = compare;
+		    args.k = k;
+		    args._depth = _depth+1;
+		    //std::cout << pthread_self() << " is creating new thread at left" << std::endl;
+		    pthread_create( &newThread, NULL, buildTree_t<T, S>, (void *)&args );
+		}
+		if( (fork == 0) && (right.size() > 0) )
+		{
+		    fork++;
+
+		    struct buildTree_t_args<T, S> args;
+		    args.nodeList = &right;
+		    args.parent = &((*parent)->children[1]);
+		    args.compare = compare;
+		    args.k = k;
+		    args._depth = _depth+1;
+
+		    //std::cout  << pthread_self() << " is creating new thread at right" << std::endl;
+		    pthread_create( &newThread, NULL, buildTree_t<T, S>, (void *)&args );
+		
+		}
+		else if( right.size() > 0 )
+		{
+		    //std::cout << pthread_self() << " is going recursive after forking" << std::endl;
+		    buildTree( &right, &((*parent)->children[1]), compare, k, _depth+1);
+		}
+		if( fork > 0 )
+		{
+		    //std::cout << pthread_self() << " is waiting for thread to finish" << std::endl;
+		    pthread_join( newThread, NULL );
+		}
+	    
 	    }
-	    if( right.size() > 0 )
+	    else
 	    {
-		buildTree( &right, &((*parent)->children[1]), compare, k, _depth+1);
-	    }
+		if( left.size() > 0 )
+		{
+		    buildTree( &left, &((*parent)->children[0]), compare, k, _depth+1);
+		}
+		if( right.size() > 0 )
+		{
+		    buildTree( &right, &((*parent)->children[1]), compare, k, _depth+1);
+		}
+	    }	
 	}
     }
 }

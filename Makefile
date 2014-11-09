@@ -60,7 +60,7 @@
 MY_CFLAGS = -Wall
 
 # The linker options.
-MY_LIBS   = -pthread -lm -lgsl -lgslcblas
+MY_LIBS   = -pthread -lm -lgsl -lgslcblas -lpthread
 
 # The pre-processor options used by the cpp (man cpp for more).
 CPPFLAGS  = -Wall

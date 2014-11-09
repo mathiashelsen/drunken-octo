@@ -22,18 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#include "drunken_octo.hpp"
-#include "sorted_ll.hpp"
-#include "timer.hpp"
-
-#include <iostream>
-#include <assert.h>
-#include <algorithm>
-#include <vector>
-#include <gsl/gsl_rng.h>
-#include <boost/random.hpp>
-#include <boost/random/mersenne_twister.hpp>
-#include <math.h>
+#include "voronoi.hpp"
 
 #define NDIMS 2
 
@@ -48,7 +37,7 @@ int comparef( vector *a, vector *b, int rank);
 double metric( vector *a, vector *b );
 double pDist(vector *a, vector *b, int rank);
 
-int main(int argc, char **argv)
+int vorotest()
 {
     double p[NDIMS];
     vector *f = (vector *)p;
@@ -93,6 +82,8 @@ int main(int argc, char **argv)
 
     delete root;
     delete rng;
+
+    return EXIT_SUCCESS;
 }
 
 int comparef( vector *a, vector *b, int rank)

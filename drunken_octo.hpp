@@ -36,6 +36,14 @@ THE SOFTWARE.
 
 #include "sorted_ll.hpp"
 
+typedef struct
+{
+    int		    maxThreads;
+    int		    curThreads;
+    pthread_mutex_t lock;
+    
+} threadCtr;
+
 template <class T, class S> class drunken_octo
 {
 private:
@@ -68,7 +76,8 @@ public:
 	drunken_octo<T, S> **parent,
 	int (* compare)( S *A, S *B, int rank),
 	int k,
-	int depth);
+	int depth
+	threadCtr *tCtr);
     // Get the data from a specific node
     T* getData() { return &nodeData; };
     // Get the position of a specific node
@@ -313,7 +322,8 @@ template <class T, class S> void buildTree(
 	drunken_octo<T, S> **parent,
 	int (* compare)( S *A, S *B, int rank),
 	int k,
-	int _depth)
+	int _depth,
+	threadCtr *tCtr)
 {
     if( nodeList->size() > 0 )
     {
@@ -331,13 +341,18 @@ template <class T, class S> void buildTree(
 	{
 	    std::vector<drunken_octo<T, S> *> left(nodeList->begin(), nodeList->begin() + retVal);
 	    std::vector<drunken_octo<T, S> *> right(nodeList->begin() + retVal + 1, nodeList->end());
-	    if( _depth == FORK_THREAD_DEPTH )
+
+	    /*
+	     * ASSERT MUTEX LOCK
+	     */
+	    pthread_mutex_lock(tCtr->lock);
+	    
+	    if( tCtr->curThreads < tCtr->maxThreads )
 	    {
 		pthread_t newThread; 
-		int fork = 0;
 		if( left.size() > 0 )
 		{
-		    fork++;
+		    tCtr->curThreads++;
 
 		    struct buildTree_t_args<T, S> args;
 		    args.nodeList = &left;
@@ -347,9 +362,9 @@ template <class T, class S> void buildTree(
 		    args._depth = _depth+1;
 		    pthread_create( &newThread, NULL, buildTree_t<T, S>, (void *)&args );
 		}
-		if( (fork == 0) && (right.size() > 0) )
+		if( (tCtr->curThreads < tCtr->maxThreads) && (right.size() > 0) )
 		{
-		    fork++;
+		    tCtr->curThreads++;
 
 		    struct buildTree_t_args<T, S> args;
 		    args.nodeList = &right;
@@ -364,10 +379,6 @@ template <class T, class S> void buildTree(
 		else if( right.size() > 0 )
 		{
 		    buildTree( &right, &((*parent)->children[1]), compare, k, _depth+1);
-		}
-		if( fork > 0 )
-		{
-		    pthread_join( newThread, NULL );
 		}
 	    
 	    }

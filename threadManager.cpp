@@ -6,6 +6,7 @@ ThreadManager::ThreadManager(int _maxThreads)
     maxThreads = _maxThreads;
     threads = new pthread_t *[maxThreads];
     pthread_mutex_init(lock, NULL);
+    pthread_mutex_init(publicLock, NULL);
 }
 
 ThreadManager::~ThreadManager()

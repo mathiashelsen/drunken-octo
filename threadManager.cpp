@@ -21,18 +21,25 @@ ThreadManager::~ThreadManager()
 
 int ThreadManager::addThreads( void *(threadFunc)(void *), void *threadArgs )
 {
-    pthread_mutex_lock(lock);
-    if( curThreads < maxThreads )
+    int retVal = pthread_mutex_trylock(lock);
+    if( retVal == 0 )
     {
-	curThreads++;
-	threads[curThreads-1] = new pthread_t;
-	int retVal = pthread_create( threads[curThreads-1], NULL, threadFunc, threadArgs );
-	pthread_mutex_unlock(lock);
-	return retVal;
+	if( curThreads < maxThreads )
+	{
+	    curThreads++;
+	    threads[curThreads-1] = new pthread_t;
+	    retVal = pthread_create( threads[curThreads-1], NULL, threadFunc, threadArgs );
+	    pthread_mutex_unlock(lock);
+	    return retVal;
+	}
+	else
+	{
+	    pthread_mutex_unlock(lock);
+	    return -1;
+	}
     }
     else
     {
-	pthread_mutex_unlock(lock);
 	return -1;
     }
 }

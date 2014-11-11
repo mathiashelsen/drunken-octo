@@ -35,6 +35,7 @@ THE SOFTWARE.
 #include <pthread.h>
 
 #include "sorted_ll.hpp"
+#include "threadManager.hpp"
 
 typedef struct
 {
@@ -76,7 +77,7 @@ public:
 	drunken_octo<T, S> **parent,
 	int (* compare)( S *A, S *B, int rank),
 	int k,
-	int depth
+	int depth,
 	threadCtr *tCtr);
     // Get the data from a specific node
     T* getData() { return &nodeData; };
@@ -345,7 +346,7 @@ template <class T, class S> void buildTree(
 	    /*
 	     * ASSERT MUTEX LOCK
 	     */
-	    pthread_mutex_lock(tCtr->lock);
+	    //pthread_mutex_lock(tCtr->lock);
 	    
 	    if( tCtr->curThreads < tCtr->maxThreads )
 	    {

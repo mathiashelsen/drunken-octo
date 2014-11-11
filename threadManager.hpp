@@ -25,18 +25,22 @@ THE SOFTWARE.
 #ifndef _THREADMANAGER_HPP
 #define _THREADMANAGER_HPP
 
-class threadManager
+#include <pthread.h>
+#include <assert.h>
+
+class ThreadManager
 {
 private:
     int		    maxThreads;
     int		    curThreads;
-    pthread_mutex_t lock;
-    pthread_t	    *threads;
+    pthread_mutex_t *lock;
+    pthread_t	    **threads;
 public:
-    threadManager(int _maxThreads);
-    ~threadManager();
+    ThreadManager(int _maxThreads);
+    ~ThreadManager();
     int addThreads( void *(threadFunc)(void *), void *threadArgs );
     bool needMoreThreads();
-}
+//    int whoami();
+};
 
 #endif

@@ -33,6 +33,7 @@ THE SOFTWARE.
 #include <algorithm>
 #include <math.h>
 #include <pthread.h>
+#include <unistd.h>
 
 #include "sorted_ll.hpp"
 #include "threadManager.hpp"
@@ -78,7 +79,8 @@ public:
 	int (* compare)( S *A, S *B, int rank),
 	int k,
 	int depth,
-	threadCtr *tCtr);
+	ThreadManager *mgr
+	);
     // Get the data from a specific node
     T* getData() { return &nodeData; };
     // Get the position of a specific node
@@ -309,12 +311,16 @@ template <class T, class S> struct buildTree_t_args
     int (* compare)( S *A, S *B, int rank);
     int k;
     int _depth;
+    ThreadManager *mgr;
 };
 
 template <class T, class S> void *buildTree_t ( void *args )
 {
     struct buildTree_t_args<T, S> *ptr = (struct buildTree_t_args<T, S> *) args;
-    buildTree(ptr->nodeList, ptr->parent, ptr->compare, ptr->k, ptr->_depth);
+    std::cout << "### New thread " << pthread_self() << " launched at depth " << ptr->_depth << " ###" << std::endl;
+    buildTree(ptr->nodeList, ptr->parent, ptr->compare, ptr->k, ptr->_depth, ptr->mgr);
+    std::cout << "### Thread " << pthread_self() << " finished ###" << std::endl;
+    ptr->mgr->removeThreads();
     pthread_exit(NULL);
 }
 
@@ -324,7 +330,7 @@ template <class T, class S> void buildTree(
 	int (* compare)( S *A, S *B, int rank),
 	int k,
 	int _depth,
-	threadCtr *tCtr)
+	ThreadManager *mgr)
 {
     if( nodeList->size() > 0 )
     {
@@ -342,60 +348,58 @@ template <class T, class S> void buildTree(
 	{
 	    std::vector<drunken_octo<T, S> *> left(nodeList->begin(), nodeList->begin() + retVal);
 	    std::vector<drunken_octo<T, S> *> right(nodeList->begin() + retVal + 1, nodeList->end());
-
-	    /*
-	     * ASSERT MUTEX LOCK
-	     */
-	    //pthread_mutex_lock(tCtr->lock);
-	    
-	    if( tCtr->curThreads < tCtr->maxThreads )
+    
+	    bool threadAdded = false;
+	    if( left.size() > 0 )
 	    {
-		pthread_t newThread; 
-		if( left.size() > 0 )
+		int retval = -1;
+		if( mgr->needMoreThreads() )
 		{
-		    tCtr->curThreads++;
-
+		    // try to add a new thread
 		    struct buildTree_t_args<T, S> args;
 		    args.nodeList = &left;
 		    args.parent = &((*parent)->children[0]);
 		    args.compare = compare;
 		    args.k = k;
 		    args._depth = _depth+1;
-		    pthread_create( &newThread, NULL, buildTree_t<T, S>, (void *)&args );
+		    args.mgr = mgr;
+		    retval = mgr->addThreads( buildTree_t<T, S>, (void *)&args );
 		}
-		if( (tCtr->curThreads < tCtr->maxThreads) && (right.size() > 0) )
+		if( retval == -1 )
 		{
-		    tCtr->curThreads++;
-
+		    // creating a thread failed, so we descend ourselves
+		    //std::cout << "Thread creation failed" << std::endl;
+		    buildTree( &left, &((*parent)->children[0]), compare, k, _depth+1, mgr);
+		}
+		else
+		{
+		    threadAdded = true;
+		}
+	    }
+		
+	    if( right.size() > 0 )
+	    {
+		int retval = -1;
+		if( mgr->needMoreThreads() && !threadAdded )
+		{
 		    struct buildTree_t_args<T, S> args;
 		    args.nodeList = &right;
 		    args.parent = &((*parent)->children[1]);
 		    args.compare = compare;
 		    args.k = k;
 		    args._depth = _depth+1;
+		    args.mgr = mgr;
 
-		    pthread_create( &newThread, NULL, buildTree_t<T, S>, (void *)&args );
-		
+		    retval = mgr->addThreads( buildTree_t<T, S>, (void *)&args );
 		}
-		else if( right.size() > 0 )
+		if( retval == -1 )
 		{
-		    buildTree( &right, &((*parent)->children[1]), compare, k, _depth+1);
+		    buildTree( &right, &((*parent)->children[1]), compare, k, _depth+1, mgr);
 		}
-	    
 	    }
-	    else
-	    {
-		if( left.size() > 0 )
-		{
-		    buildTree( &left, &((*parent)->children[0]), compare, k, _depth+1);
-		}
-		if( right.size() > 0 )
-		{
-		    buildTree( &right, &((*parent)->children[1]), compare, k, _depth+1);
-		}
-	    }	
 	}
     }
+    mgr->masterBarrier();
 }
 
 template <class T, class S> void drunken_octo<T, S>::addNode(

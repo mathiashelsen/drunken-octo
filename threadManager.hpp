@@ -27,20 +27,26 @@ THE SOFTWARE.
 
 #include <pthread.h>
 #include <assert.h>
+#include <iostream>
+#include <unistd.h>
 
 class ThreadManager
 {
 private:
     int		    maxThreads;
     int		    curThreads;
-    pthread_mutex_t *lock;
+    pthread_mutex_t *privateLock;
     pthread_mutex_t *publicLock;
     pthread_t	    **threads;
+    pthread_t	    master;
 public:
     ThreadManager(int _maxThreads);
     ~ThreadManager();
     int addThreads( void *(threadFunc)(void *), void *threadArgs );
+    void removeThreads();
     bool needMoreThreads();
+    int barrier();
+    int masterBarrier();
     int lock() { return pthread_mutex_lock(publicLock); };
     int unlock() { return pthread_mutex_unlock(publicLock); };
 //    int whoami();

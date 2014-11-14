@@ -39,11 +39,13 @@ double pDist(vector *a, vector *b, int rank);
 
 int vorotest()
 {
-    ThreadManager mgr(4);
+    threadCtrl mgr;
+    mgr.curThreads = 1;
+    mgr.maxThreads = 8;
     double p[NDIMS];
     vector *f = (vector *)p;
 
-    int trainingpoints = 10;
+    int trainingpoints = 10000000;
     std::vector< drunken_octo<double, vector> *> training_data;
 
     boost::mt19937 *rng = new boost::mt19937();
@@ -58,17 +60,14 @@ int vorotest()
 	double val = (double) i;
 	Node *newNode = new Node( &val, f );
 	training_data.push_back(newNode);
-//	std::cout << p[0] << "\t" << p[1] << std::endl;
     }
-  //  std::cout << std::endl << std::endl;
 
     Node *root = NULL;
     buildTree<double, vector>( &training_data, &root, &comparef, NDIMS, 0, &mgr);
     std::cout << "Master thread done" << std::endl;
-    mgr.barrier();
 
-    /*
-   
+  
+    /*   
     for(int i = 0; i < 1000; i++ )
     {
 	p[0] = (double)i/50.0 - 10.0;
@@ -84,6 +83,7 @@ int vorotest()
 	}
     }
     */
+    
     delete root;
     delete rng;
 

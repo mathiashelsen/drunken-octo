@@ -36,7 +36,6 @@ THE SOFTWARE.
 #include <unistd.h>
 
 #include "sorted_ll.hpp"
-#include "threadManager.hpp"
 
 typedef struct
 {
@@ -44,7 +43,7 @@ typedef struct
     int		    curThreads;
     pthread_mutex_t lock;
     
-} threadCtr;
+} threadCtrl;
 
 template <class T, class S> class drunken_octo
 {
@@ -79,7 +78,7 @@ public:
 	int (* compare)( S *A, S *B, int rank),
 	int k,
 	int depth,
-	ThreadManager *mgr
+	threadCtrl *mgr
 	);
     // Get the data from a specific node
     T* getData() { return &nodeData; };
@@ -311,16 +310,15 @@ template <class T, class S> struct buildTree_t_args
     int (* compare)( S *A, S *B, int rank);
     int k;
     int _depth;
-    ThreadManager *mgr;
+    threadCtrl *mgr;
 };
 
 template <class T, class S> void *buildTree_t ( void *args )
 {
     struct buildTree_t_args<T, S> *ptr = (struct buildTree_t_args<T, S> *) args;
-    std::cout << "### New thread " << pthread_self() << " launched at depth " << ptr->_depth << " ###" << std::endl;
+    std::cout << "# New thread " << pthread_self() << " launched at depth " << ptr->_depth << std::endl;
     buildTree(ptr->nodeList, ptr->parent, ptr->compare, ptr->k, ptr->_depth, ptr->mgr);
-    std::cout << "### Thread " << pthread_self() << " finished ###" << std::endl;
-    ptr->mgr->removeThreads();
+    std::cout << "# Thread " << pthread_self() << " finished" << std::endl;
     pthread_exit(NULL);
 }
 
@@ -330,7 +328,7 @@ template <class T, class S> void buildTree(
 	int (* compare)( S *A, S *B, int rank),
 	int k,
 	int _depth,
-	ThreadManager *mgr)
+	threadCtrl *mgr)
 {
     if( nodeList->size() > 0 )
     {
@@ -346,16 +344,18 @@ template <class T, class S> void buildTree(
 	(*parent)->setDepth(_depth);
 	if( nodeList->size() > 1 )
 	{
+	    bool threadAdded = false;
+	    pthread_t daughterThread;
+
 	    std::vector<drunken_octo<T, S> *> left(nodeList->begin(), nodeList->begin() + retVal);
 	    std::vector<drunken_octo<T, S> *> right(nodeList->begin() + retVal + 1, nodeList->end());
     
-	    bool threadAdded = false;
 	    if( left.size() > 0 )
 	    {
-		int retval = -1;
-		if( mgr->needMoreThreads() )
+		pthread_mutex_lock( &(mgr->lock) );
+		if( mgr->curThreads < mgr->maxThreads )
 		{
-		    // try to add a new thread
+		    // Add a new thread
 		    struct buildTree_t_args<T, S> args;
 		    args.nodeList = &left;
 		    args.parent = &((*parent)->children[0]);
@@ -363,25 +363,24 @@ template <class T, class S> void buildTree(
 		    args.k = k;
 		    args._depth = _depth+1;
 		    args.mgr = mgr;
-		    retval = mgr->addThreads( buildTree_t<T, S>, (void *)&args );
-		}
-		if( retval == -1 )
-		{
-		    // creating a thread failed, so we descend ourselves
-		    //std::cout << "Thread creation failed" << std::endl;
-		    buildTree( &left, &((*parent)->children[0]), compare, k, _depth+1, mgr);
+		    pthread_create( &daughterThread, NULL, buildTree_t<T, S>, (void *)&args );
+		    threadAdded = true;
+		    mgr->curThreads++;
+		    pthread_mutex_unlock( &(mgr->lock) );
 		}
 		else
 		{
-		    threadAdded = true;
+		    pthread_mutex_unlock( &(mgr->lock) );
+		    buildTree( &left, &((*parent)->children[0]), compare, k, _depth+1, mgr);
 		}
 	    }
 		
 	    if( right.size() > 0 )
 	    {
-		int retval = -1;
-		if( mgr->needMoreThreads() && !threadAdded )
+		pthread_mutex_lock( &(mgr->lock) );
+		if( (mgr->curThreads < mgr->maxThreads) && !threadAdded )
 		{
+		    // Add a new thread
 		    struct buildTree_t_args<T, S> args;
 		    args.nodeList = &right;
 		    args.parent = &((*parent)->children[1]);
@@ -389,17 +388,23 @@ template <class T, class S> void buildTree(
 		    args.k = k;
 		    args._depth = _depth+1;
 		    args.mgr = mgr;
-
-		    retval = mgr->addThreads( buildTree_t<T, S>, (void *)&args );
+		    pthread_create( &daughterThread, NULL, buildTree_t<T, S>, (void *)&args );
+		    threadAdded = true;
+		    mgr->curThreads++;
+		    pthread_mutex_unlock( &(mgr->lock) );
 		}
-		if( retval == -1 )
+		else
 		{
+		    pthread_mutex_unlock( &(mgr->lock) );
 		    buildTree( &right, &((*parent)->children[1]), compare, k, _depth+1, mgr);
 		}
 	    }
+
+	    // If we spawned a new thread, we should wait until it finishes
+	    if( threadAdded )
+		pthread_join( daughterThread, NULL );
 	}
     }
-    mgr->masterBarrier();
 }
 
 template <class T, class S> void drunken_octo<T, S>::addNode(

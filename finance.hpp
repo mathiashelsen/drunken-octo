@@ -25,10 +25,15 @@ THE SOFTWARE.
 #ifndef _FINANCE_HPP
 #define _FINANCE_HPP
 
-typedef struct
-{
-    
-} datapoint;
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <boost/tokenizer.hpp>
+
+using namespace boost;
+using namespace std;
+
+void readDatafile(ifstream *file, vector<vector<double> *> *list);
 
 #include "drunken_octo.hpp"
 #include <vector>

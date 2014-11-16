@@ -88,15 +88,16 @@ public:
     // Retrieves a vector/list of pointers to nodes that are leaves of the tree
     void getLeaves( std::vector<drunken_octo<T, S> *> *leavesList );
     // Compares a node with another one
-    // Retrieve the N closest leaves to a specific point, where a metric function is specified.
+    // Retrieve the closest leaf to a specific point, where a metric function is specified.
     void findNN( 
 	drunken_octo<T, S>** currentBest,
 	double *currentDist,
 	S *target,
 	double (* metricFunc)( S *target, S *current),
 	double (* projectedDistance)( S* target, S *current, int rank),
-	int k );
-    //void getNeighbours( S *position, double ( * metric )( S *a, S *b), int N, std::vector<drunken_octo<T, S> *> *leavesList);
+	int k,
+	threadCtrl *mgr );
+    // Retrieve the closest N leaves to a specific point, where a metric function is specified.
     void findNN(
 	Sorted_LL< drunken_octo<T, S> > *NN,
 	S *target,
@@ -180,25 +181,61 @@ template <class T, class S> drunken_octo<T, S>::~drunken_octo()
     }
 }
 
+template <class T, class S> struct find_NN_t_args
+{
+    drunken_octo<T, S> *node;
+    drunken_octo<T, S>** currentBest;
+    double *currentDist;
+    S *target;
+    double (* metricFunc)( S *target, S *current);
+    double (* projectedDistance)( S* target, S *current, int rank);
+    int k;
+    threadCtrl *mgr;
+};
+
+template <class T, class S> void *findNN_t( void *args )
+{
+    find_NN_t_args<T, S> *ptr = (find_NN_t_args<T, S> *) args;
+    //std::cout << "# New thread " << pthread_self() << " launched" << std::endl;
+    (ptr->node)->findNN(
+	ptr->currentBest,
+	ptr->currentDist,
+	ptr->target,
+	ptr->metricFunc,
+	ptr->projectedDistance,
+	ptr->k,
+	ptr->mgr
+	);
+    //std::cout << "# Thread " << pthread_self() << " finished" << std::endl;
+    pthread_exit(NULL);
+    return NULL;
+}
+
 template <class T, class S> void drunken_octo<T, S>::findNN( 
 	drunken_octo<T, S>** currentBest,
 	double *currentDist,
 	S *target,
 	double (* metricFunc)( S *target, S *current),
 	double (* projectedDistance)( S* target, S *current, int rank),
-	int k
+	int k,
+	threadCtrl *mgr
 	)
 {
     // Check if the current node is closer than the previous best estimate
     double dist = metricFunc( target, &nodePosition );
+    //pthread_mutex_lock(&(mgr->lock));
     if( dist < *currentDist )
     {	
 	*currentBest = this;
 	*currentDist = dist;
     }
+    //pthread_mutex_unlock(&(mgr->lock));
 
     // Can some of the points on the left seperating hyperplane provide a better match?
     dist = projectedDistance( target, &nodePosition, depth%k );
+
+    bool addedThread = false;
+    pthread_t daughterThread;
     
     // Make sure the target doesn't lie on the hyperplane
     if( dist != 0.0 )
@@ -206,28 +243,67 @@ template <class T, class S> void drunken_octo<T, S>::findNN(
 	int i = ( dist < 0.0 ) ? 0 : 1;
 	if(children[i] != NULL)
 	{
-	    children[i]->findNN(currentBest, currentDist, target, metricFunc, projectedDistance, k);
+		children[i]->findNN(currentBest, currentDist, target, metricFunc, projectedDistance, k, mgr);
 	}
 	// Is the can it lie on other side of the seperating hyperplane?
-	if( fabs(dist) < *currentDist )
+	double currentDistAlias;
+//	pthread_mutex_lock(&(mgr->lock));
+	currentDistAlias = *currentDist;
+//	pthread_mutex_unlock(&(mgr->lock));
+
+	if( fabs(dist) < currentDistAlias )
 	{
+//	    pthread_mutex_unlock(&(mgr->lock));
 	    if(children[1-i] != NULL)
 	    {
-		children[1-i]->findNN(currentBest, currentDist, target, metricFunc, projectedDistance, k);
-	    }
-	}	
+/*		pthread_mutex_lock(&(mgr->lock));
+		if( mgr->curThreads < mgr->maxThreads )
+		{
+//		    std::cout << "Forking thread" << std::endl;
+		    // Fork a new thread
+		    struct find_NN_t_args<T, S> threadArgs;
+		    threadArgs.node = children[1-i];
+		    threadArgs.currentBest = currentBest;
+		    threadArgs.currentDist = currentDist;
+		    threadArgs.target = target;
+		    threadArgs.metricFunc = metricFunc;
+		    threadArgs.projectedDistance = projectedDistance;
+		    threadArgs.k = k;
+		    threadArgs.mgr = mgr;
 
+		    pthread_create( &daughterThread, NULL, findNN_t<T, S>, (void *) &threadArgs );
+		    mgr->curThreads++;
+		    addedThread = true;
+
+		    // Unlock the mutex
+		    pthread_mutex_unlock(&(mgr->lock));
+		}
+		else
+		{
+		    pthread_mutex_unlock(&(mgr->lock));*/
+		children[1-i]->findNN(currentBest, currentDist, target, metricFunc, projectedDistance, k, mgr);
+		//}
+	    }
+	}
     }
     else
     {
 	if(children[0] != NULL)
 	{
-	    children[0]->findNN(currentBest, currentDist, target, metricFunc, projectedDistance, k);
+	    children[0]->findNN(currentBest, currentDist, target, metricFunc, projectedDistance, k, mgr);
 	}
 	if(children[1] != NULL)
 	{
-	    children[1]->findNN(currentBest, currentDist, target, metricFunc, projectedDistance, k);
+	    children[1]->findNN(currentBest, currentDist, target, metricFunc, projectedDistance, k, mgr);
 	}
+    }
+    
+    if(addedThread)
+    {
+	pthread_join( daughterThread, NULL );
+	pthread_mutex_lock(&(mgr->lock));
+	mgr->curThreads--;
+	pthread_mutex_unlock(&(mgr->lock));
     }
 }
 
@@ -316,9 +392,9 @@ template <class T, class S> struct buildTree_t_args
 template <class T, class S> void *buildTree_t ( void *args )
 {
     struct buildTree_t_args<T, S> *ptr = (struct buildTree_t_args<T, S> *) args;
-    std::cout << "# New thread " << pthread_self() << " launched at depth " << ptr->_depth << std::endl;
+    //std::cout << "# New thread " << pthread_self() << " launched at depth " << ptr->_depth << std::endl;
     buildTree(ptr->nodeList, ptr->parent, ptr->compare, ptr->k, ptr->_depth, ptr->mgr);
-    std::cout << "# Thread " << pthread_self() << " finished" << std::endl;
+    //std::cout << "# Thread " << pthread_self() << " finished" << std::endl;
     pthread_exit(NULL);
 }
 
@@ -402,7 +478,12 @@ template <class T, class S> void buildTree(
 
 	    // If we spawned a new thread, we should wait until it finishes
 	    if( threadAdded )
+	    {
 		pthread_join( daughterThread, NULL );
+		pthread_mutex_lock(&(mgr->lock));
+		mgr->curThreads--;
+		pthread_mutex_unlock(&(mgr->lock));
+	    }
 	}
     }
 }

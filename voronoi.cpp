@@ -41,11 +41,11 @@ int vorotest()
 {
     threadCtrl mgr;
     mgr.curThreads = 1;
-    mgr.maxThreads = 8;
+    mgr.maxThreads = 4;
     double p[NDIMS];
     vector *f = (vector *)p;
 
-    int trainingpoints = 10000000;
+    int trainingpoints = 500;
     std::vector< drunken_octo<double, vector> *> training_data;
 
     boost::mt19937 *rng = new boost::mt19937();
@@ -56,18 +56,23 @@ int vorotest()
 	for(int j = 0; j < NDIMS; j++ )
 	{
 	    p[j] = generator()*20.0 - 10.0;
+	    //std::cout << p[j] << "\t";
 	}
+	//std::cout << std::endl;
 	double val = (double) i;
 	Node *newNode = new Node( &val, f );
 	training_data.push_back(newNode);
     }
+    std::cout << std::endl << std::endl;
 
     Node *root = NULL;
     buildTree<double, vector>( &training_data, &root, &comparef, NDIMS, 0, &mgr);
-    std::cout << "Master thread done" << std::endl;
+    std::cout << "# Master thread done" << std::endl;
+    std::cout << "Number of threads: " << mgr.curThreads << std::endl;
 
-  
-    /*   
+    mgr.maxThreads = 1;
+    Timer tm;
+    tm.start();  
     for(int i = 0; i < 1000; i++ )
     {
 	p[0] = (double)i/50.0 - 10.0;
@@ -76,13 +81,36 @@ int vorotest()
 	    p[1] = (double)j/50.0 - 10.0;
 	    drunken_octo<double, vector> *nn = NULL;
 	    double dist = 1.0e6;
-	    root->findNN(&nn, &dist, f, metric, pDist, NDIMS);
-	    double *data = NULL;
-	    data = nn->getData();
-	    std::cout << p[0] << "\t" << p[1] << "\t" << *data << std::endl;
+	    root->findNN(&nn, &dist, f, metric, pDist, NDIMS, &mgr);
+	    //std::cout << "# Master thread done" << std::endl;
+	    //std::cout << "Number of threads: " << mgr.curThreads << std::endl;
+	    //double *data = NULL;
+	    //data = nn->getData();
+	    //std::cout << p[0] << "\t" << p[1] << "\t" << *data << std::endl;
 	}
     }
-    */
+    tm.stop();
+    std::cout << tm.duration() << std::endl;
+    mgr.maxThreads = 2;
+    tm.start();  
+    for(int i = 0; i < 100; i++ )
+    {
+	p[0] = (double)i/50.0 - 10.0;
+	for(int j = 0; j < 100; j++)
+	{
+	    p[1] = (double)j/50.0 - 10.0;
+	    drunken_octo<double, vector> *nn = NULL;
+	    double dist = 1.0e6;
+	    root->findNN(&nn, &dist, f, metric, pDist, NDIMS, &mgr);
+	    //std::cout << "# Master thread done" << std::endl;
+	    //std::cout << "Number of threads: " << mgr.curThreads << std::endl;
+	    //double *data = NULL;
+	    //data = nn->getData();
+	    //std::cout << p[0] << "\t" << p[1] << "\t" << *data << std::endl;
+	}
+    }
+    tm.stop();
+    std::cout << tm.duration() << std::endl;
     
     delete root;
     delete rng;

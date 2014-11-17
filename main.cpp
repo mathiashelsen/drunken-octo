@@ -23,8 +23,25 @@ THE SOFTWARE.
 */
 
 #include "voronoi.hpp"
+#include "finance.hpp"
 
 int main(int argc, char **argv)
 {
-    vorotest();
+    ifstream inputFile( argv[1] );
+    vector<vector<double> *> list;
+    readDatafile(&inputFile, &list);
+    for(vector<vector<double> *>::iterator it = list.begin(); it != list.end(); ++it)
+    {
+	vector<double> *ptr = *it;
+	
+	for(vector<double>::iterator jt = ptr->begin(); jt != ptr->end(); ++jt)
+	{
+	    std::cout << *jt << "\t";
+	}
+	delete *it;
+	std::cout << std::endl;
+	
+    }
+    //vorotest();
+     
 }

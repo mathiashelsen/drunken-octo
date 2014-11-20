@@ -29,19 +29,24 @@ int main(int argc, char **argv)
 {
     ifstream inputFile( argv[1] );
     vector<vector<double> *> list;
+
     readDatafile(&inputFile, &list);
+    
+
+    vector<datapoint *> *verification;
+    datapoint *root = NULL;
+    createDataset( &list, 
+		   &root,
+		   &verification );
+
+    runTest(root, verification);
+
     for(vector<vector<double> *>::iterator it = list.begin(); it != list.end(); ++it)
     {
-	vector<double> *ptr = *it;
-	
-	for(vector<double>::iterator jt = ptr->begin(); jt != ptr->end(); ++jt)
-	{
-	    std::cout << *jt << "\t";
-	}
 	delete *it;
-	std::cout << std::endl;
-	
     }
+    delete root;
+    
     //vorotest();
      
 }

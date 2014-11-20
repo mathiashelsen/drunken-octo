@@ -25,17 +25,42 @@ THE SOFTWARE.
 #ifndef _FINANCE_HPP
 #define _FINANCE_HPP
 
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <fstream>
 #include <boost/tokenizer.hpp>
+#include <assert.h>
+#include <vector>
+#include <gsl/gsl_statistics.h>
+#include <gsl/gsl_fit.h>
+
+#include "sorted_ll.hpp"
+#include "drunken_octo.hpp"
 
 using namespace boost;
 using namespace std;
 
-void readDatafile(ifstream *file, vector<vector<double> *> *list);
+#define NDIMS 4
 
-#include "drunken_octo.hpp"
-#include <vector>
+typedef struct
+{
+    double x[4];
+}X;
+
+typedef struct
+{
+    double y[2];
+}Y;
+
+typedef drunken_octo<Y, X> datapoint;
+
+int compare( X *a, X *b, int rank);
+double metric( X *a, X *b );
+double projectedDistance(X *a, X *b, int rank);
+
+void readDatafile(ifstream *file, vector<vector<double> *> *list);
+void createDataset( vector<vector<double> *> *list, datapoint **root, vector<datapoint*> **verification );
+void runTest(datapoint *root, vector<datapoint *> *verification);
 
 #endif

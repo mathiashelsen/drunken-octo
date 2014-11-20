@@ -42,6 +42,7 @@ int vorotest()
     threadCtrl mgr;
     mgr.curThreads = 1;
     mgr.maxThreads = 4;
+    pthread_mutex_init( &(mgr.lock), NULL );
     double p[NDIMS];
     vector *f = (vector *)p;
 
@@ -90,6 +91,8 @@ int vorotest()
     
     delete root;
     delete rng;
+
+    pthread_mutex_destroy( &(mgr.lock) );
 
     return EXIT_SUCCESS;
 }

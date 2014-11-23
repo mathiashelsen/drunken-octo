@@ -41,11 +41,11 @@ THE SOFTWARE.
 using namespace boost;
 using namespace std;
 
-#define NDIMS 4
+#define NDIMS 5
 
 typedef struct
 {
-    double x[4];
+    double x[NDIMS];
 }X;
 
 typedef struct

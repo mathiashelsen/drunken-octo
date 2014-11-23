@@ -32,11 +32,11 @@ void createDataset( vector<vector<double> *> *list,
 	int i = 0;
 	for( vector<double>::iterator jt = (*it)->begin(); jt != (*it)->end(); ++jt )
 	{
-	    if( i < 4 )
+	    if( i < NDIMS )
 	    {
 		x.x[i] = *jt;
 	    } else {
-		y.y[i%4] = *jt;
+		y.y[i%NDIMS] = *jt;
 	    }
 	    i++;
 	}
@@ -64,13 +64,10 @@ void runTest(datapoint *root,
 	     vector<datapoint *> *verification)
 {
     int N = verification->size();
-    double *weeklyPrediction = new double[N];
-    double *weeklyActual = new double[N];
-    double *weeklyError = new double[N];
-
-    double *dailyPrediction = new double[N];
-    double *dailyActual = new double[N];
-    double *dailyError = new double[N];
+    double theilU_avg = 0.0;
+    double *dailyPrd = new double[N];
+    double *prdError = new double[N];
+    double *avgError = new double[N];
 
     for(int i = 0; i < N; i++)
     {
@@ -82,9 +79,8 @@ void runTest(datapoint *root,
 	root->findNN( nn, targetPos, metric, projectedDistance, NDIMS, 10 );
 
 	datapoint *ptr = NULL;
-	double dist, dailyEstimate, weeklyEstimate, norm;
+	double dist, dailyEstimate, norm;
 	dailyEstimate = 0.0;
-	weeklyEstimate = 0.0;
 	norm = 0.0;
 
 	nn->getNext( &ptr, &dist );
@@ -93,53 +89,29 @@ void runTest(datapoint *root,
 	    Y *y = ptr->getData();
 	    norm += 1.0/dist; 
 	    dailyEstimate += y->y[0]/dist;
-	    weeklyEstimate += y->y[1]/dist;
 	    nn->getNext( &ptr, &dist );
 	}
 	dailyEstimate /= norm;
-	weeklyEstimate /= norm;
-	weeklyPrediction[i] = weeklyEstimate;
-	dailyPrediction[i] = dailyEstimate;
-	weeklyActual[i] = targetVal->y[1];
-	dailyActual[i] = targetVal->y[0];
-	weeklyError[i] = weeklyEstimate - weeklyActual[i];
-	dailyError[i] = dailyEstimate - dailyActual[i];
+	prdError[i] = (dailyEstimate - targetVal->y[0])*(dailyEstimate - targetVal->y[0]);
+	dailyPrd[i] = dailyEstimate;
 
 	delete nn;
     }
+    double averageReturn = gsl_stats_mean(dailyPrd, 1, N);
+    for(int i = 0; i < N; i++ )
+    {
+	datapoint *target = verification->at(i);
+	Y *targetVal = target->getData();
+	avgError[i] = (averageReturn - targetVal->y[0])*(averageReturn - targetVal->y[0]);
+    }
 
-    double averageReturn = gsl_stats_mean(weeklyActual, 1, N);
-    double c00, c01, c10, c11, rsqrd;
-    double m,c;
-    gsl_fit_linear(weeklyPrediction, 1, weeklyActual, 1, N, &m, &c, &c00, &c01, &c11, &rsqrd);
-    std::cout << "Weekly NN prediction" << std::endl;
-    std::cout << "m = " << m << " +/- " << sqrt(c00*rsqrd) << " (" << 100.0*sqrt(c00*rsqrd)/m << "\%)" << std::endl;
-    std::cout << "c = " << c << " +/- " << sqrt(c11*rsqrd) << " (" << 100.0*sqrt(c11*rsqrd)/c << "\%)" << std::endl;
-    std::cout << "Average error : " << gsl_stats_mean(weeklyError, 1, N) << ", ";
-    std::cout << gsl_stats_sd(weeklyError, 1, N) << ", ";
-    std::cout << gsl_stats_sd(weeklyError, 1, N)/gsl_stats_mean(weeklyError, 1, N) << std::endl;
-    double rho = gsl_stats_correlation(weeklyPrediction, 1, weeklyActual, 1, N);
-    double rho_err = (1.0 - rho*rho)/sqrt((double)N);
-    std::cout << "Correlation coefficient: " << rho << " +/- " << rho_err << std::endl;
+    theilU_avg = sqrt(gsl_stats_mean(prdError, 1, N)/gsl_stats_mean(avgError, 1, N));
+    std::cout << "RMSE prediction : " << sqrt(gsl_stats_mean(prdError, 1, N)) << std::endl;
+    std::cout << "Theil-U : " << theilU_avg << std::endl;
 
-
-    gsl_fit_linear(dailyPrediction, 1, dailyActual, 1, N, &m, &c, &c00, &c01, &c11, &rsqrd);
-    std::cout << "\n\nDaily NN prediction" << std::endl;
-    std::cout << "m = " << m << " +/- " << sqrt(c00*rsqrd) << " (" << 100.0*sqrt(c00*rsqrd)/m << "\%)" << std::endl;
-    std::cout << "c = " << c << " +/- " << sqrt(c11*rsqrd) << " (" << 100.0*sqrt(c11*rsqrd)/c << "\%)" << std::endl;
-    std::cout << "Average error : " << gsl_stats_mean(dailyError, 1, N) << ", ";
-    std::cout << gsl_stats_sd(dailyError, 1, N) << ", ";
-    std::cout << gsl_stats_sd(dailyError, 1, N)/gsl_stats_mean(dailyError, 1, N) << std::endl;
-    rho = gsl_stats_correlation(dailyPrediction, 1, dailyActual, 1, N);
-    rho_err = (1.0 - rho*rho)/sqrt((double)N);
-    std::cout << "Correlation coefficient: " << rho << " +/- " << rho_err << std::endl;
-
-    delete[] weeklyPrediction;
-    delete[] weeklyActual;
-    delete[] weeklyError;
-    delete[] dailyPrediction;
-    delete[] dailyActual;
-    delete[] dailyError;
+    delete[] dailyPrd;
+    delete[] prdError;
+    delete[] avgError;
 }
 
 int compare( X *a, X *b, int rank)

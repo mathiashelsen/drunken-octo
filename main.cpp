@@ -24,29 +24,40 @@ THE SOFTWARE.
 
 #include "voronoi.hpp"
 #include "finance.hpp"
+#include <stdio.h>
 
 int main(int argc, char **argv)
 {
-    ifstream inputFile( argv[1] );
+    ifstream inputFile( "TestData/SPY_volatility.dat" );
     vector<vector<double> *> list;
+    double scale[5];
+    for(int i = 0; i < 5; i++ )
+    {
+	scale[i] = atof(argv[i+1]);
+    }
 
-    readDatafile(&inputFile, &list);
+    readDatafile(&inputFile, &list );
     
 
     vector<datapoint *> *verification;
     datapoint *root = NULL;
     createDataset( &list, 
 		   &root,
-		   &verification );
+		   &verification,
+		   scale );
 
-    runTest(root, verification);
+    double Tu = runTest(root, verification);
+    std::cout << Tu << std::endl;
+    FILE * fileout = fopen("tmp.txt", "w");
+    fprintf(fileout, "%e", Tu);
+    fflush(fileout);
+    fclose(fileout);
 
     for(vector<vector<double> *>::iterator it = list.begin(); it != list.end(); ++it)
     {
 	delete *it;
     }
     delete root;
-    
-    //vorotest();
-     
+
+    return 0;
 }

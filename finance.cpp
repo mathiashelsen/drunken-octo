@@ -21,7 +21,8 @@ void readDatafile(ifstream *file, vector<vector<double> *> *list)
 
 void createDataset( vector<vector<double> *> *list, 
 		    datapoint **root, 
-		    vector<datapoint*> **verification )
+		    vector<datapoint*> **verification,
+		    double *scale )
 {
     vector<datapoint *> *myList = new vector<datapoint *>;
 
@@ -34,7 +35,7 @@ void createDataset( vector<vector<double> *> *list,
 	{
 	    if( i < NDIMS )
 	    {
-		x.x[i] = *jt;
+		x.x[i] = *jt/scale[i];
 	    } else {
 		y.y[i%NDIMS] = *jt;
 	    }
@@ -60,12 +61,12 @@ void createDataset( vector<vector<double> *> *list,
     pthread_mutex_destroy( &(mgr.lock) );
 }
 
-void runTest(datapoint *root, 
+double runTest(datapoint *root, 
 	     vector<datapoint *> *verification)
 {
     int N = verification->size();
     double theilU_avg = 0.0;
-    double *dailyPrd = new double[N];
+    double *dailyActual = new double[N];
     double *prdError = new double[N];
     double *avgError = new double[N];
 
@@ -93,11 +94,12 @@ void runTest(datapoint *root,
 	}
 	dailyEstimate /= norm;
 	prdError[i] = (dailyEstimate - targetVal->y[0])*(dailyEstimate - targetVal->y[0]);
-	dailyPrd[i] = dailyEstimate;
+	dailyActual[i] = targetVal->y[0];
 
 	delete nn;
     }
-    double averageReturn = gsl_stats_mean(dailyPrd, 1, N);
+
+    double averageReturn = gsl_stats_mean(dailyActual, 1, N);
     for(int i = 0; i < N; i++ )
     {
 	datapoint *target = verification->at(i);
@@ -106,12 +108,12 @@ void runTest(datapoint *root,
     }
 
     theilU_avg = sqrt(gsl_stats_mean(prdError, 1, N)/gsl_stats_mean(avgError, 1, N));
-    std::cout << "RMSE prediction : " << sqrt(gsl_stats_mean(prdError, 1, N)) << std::endl;
-    std::cout << "Theil-U : " << theilU_avg << std::endl;
 
-    delete[] dailyPrd;
+    delete[] dailyActual;
     delete[] prdError;
     delete[] avgError;
+
+    return theilU_avg;
 }
 
 int compare( X *a, X *b, int rank)

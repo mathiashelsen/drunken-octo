@@ -42,6 +42,7 @@ using namespace boost;
 using namespace std;
 
 #define NDIMS 5
+#define PDIMS 1
 
 typedef struct
 {
@@ -50,7 +51,7 @@ typedef struct
 
 typedef struct
 {
-    double y[2];
+    double y[PDIMS];
 }Y;
 
 typedef drunken_octo<Y, X> datapoint;
@@ -60,7 +61,7 @@ double metric( X *a, X *b );
 double projectedDistance(X *a, X *b, int rank);
 
 void readDatafile(ifstream *file, vector<vector<double> *> *list);
-void createDataset( vector<vector<double> *> *list, datapoint **root, vector<datapoint*> **verification );
-void runTest(datapoint *root, vector<datapoint *> *verification);
+void createDataset( vector<vector<double> *> *list, datapoint **root, vector<datapoint*> **verification, double *scale );
+double runTest(datapoint *root, vector<datapoint *> *verification);
 
 #endif

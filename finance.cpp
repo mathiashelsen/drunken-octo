@@ -35,7 +35,7 @@ void createDataset( vector<vector<double> *> *list,
 	{
 	    if( i < NDIMS )
 	    {
-		x.x[i] = *jt/scale[i];
+		x.x[i] = *jt/exp(scale[i]);
 	    } else {
 		y.y[i%NDIMS] = *jt;
 	    }
@@ -72,12 +72,13 @@ double runTest(datapoint *root,
 
     for(int i = 0; i < N; i++)
     {
-	Sorted_LL<datapoint> *nn = new Sorted_LL<datapoint>(10);
+	int NNN = 10;
+	Sorted_LL<datapoint> *nn = new Sorted_LL<datapoint>(NNN);
 	datapoint *target = verification->at(i);
 	Y *targetVal = target->getData();
 	X *targetPos = target->getPosition();
 
-	root->findNN( nn, targetPos, metric, projectedDistance, NDIMS, 10 );
+	root->findNN( nn, targetPos, metric, projectedDistance, NDIMS, NNN );
 
 	datapoint *ptr = NULL;
 	double dist, dailyEstimate, norm;

@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 int main(int argc, char **argv)
 {
-    ifstream inputFile( "TestData/SPY_volatility.dat" );
+    ifstream inputFile( "TestData/MICROSOFT_volatility.dat" );
     vector<vector<double> *> list;
     double scale[5];
     for(int i = 0; i < 5; i++ )

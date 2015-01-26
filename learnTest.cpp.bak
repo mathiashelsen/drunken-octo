@@ -3,6 +3,7 @@
 #define NDIMS 4
 
 void benchmark_quickselect();
+
 void benchmark_buildtree();
 
 typedef struct

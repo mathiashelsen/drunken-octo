@@ -2,6 +2,7 @@
 #define _SORTED_LL_HPP
 
 #include <assert.h>
+
 #include <stdlib.h>
 
 template <typename T> struct list_elem
